@@ -25,7 +25,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"gitlab.com/leadschain/leadschain/client"
+	"github.com/leadschain/leadschain/client"
 )
 
 // Account struct describes account related fields

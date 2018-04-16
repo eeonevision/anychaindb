@@ -26,7 +26,7 @@ import (
 	"log"
 	"os"
 
-	lapi "gitlab.com/leadschain/leadschain/api"
+	lapi "github.com/leadschain/leadschain/api"
 )
 
 func main() {

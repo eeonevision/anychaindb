@@ -31,7 +31,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"gitlab.com/leadschain/leadschain/api/handler"
+	"github.com/leadschain/leadschain/api/handler"
 )
 
 type server struct {

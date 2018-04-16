@@ -28,9 +28,9 @@ import (
 	"os"
 	"testing"
 
-	"gitlab.com/leadschain/leadschain/client"
+	"github.com/leadschain/leadschain/client"
 
-	"gitlab.com/leadschain/leadschain/api/handler"
+	"github.com/leadschain/leadschain/api/handler"
 )
 
 var host = flag.String("host", "localhost", "machine host")

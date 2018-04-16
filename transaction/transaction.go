@@ -27,7 +27,7 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"gitlab.com/leadschain/leadschain/crypto"
+	"github.com/leadschain/leadschain/crypto"
 
 	"golang.org/x/crypto/sha3"
 )

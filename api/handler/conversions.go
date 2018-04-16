@@ -27,9 +27,9 @@ import (
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/leadschain/leadschain/client"
 	"github.com/mitchellh/mapstructure"
-	"gitlab.com/leadschain/leadschain/client"
-	"gitlab.com/leadschain/leadschain/crypto"
+	"github.com/leadschain/leadschain/crypto"
 )
 
 // Conversion struct describes conversion related fields

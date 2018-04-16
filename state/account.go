@@ -24,7 +24,7 @@ package state
 import (
 	"errors"
 
-	"gitlab.com/leadschain/leadschain/crypto"
+	"github.com/leadschain/leadschain/crypto"
 )
 
 //go:generate msgp

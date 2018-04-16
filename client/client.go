@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/globalsign/mgo/bson"
-	"gitlab.com/leadschain/leadschain/crypto"
-	"gitlab.com/leadschain/leadschain/state"
+	"github.com/leadschain/leadschain/crypto"
+	"github.com/leadschain/leadschain/state"
 )
 
 // API is the high level interface for leadschain client applications

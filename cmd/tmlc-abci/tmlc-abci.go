@@ -28,7 +28,7 @@ import (
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/common"
 	"github.com/tendermint/tmlibs/log"
-	labci "gitlab.com/leadschain/leadschain/abci-app"
+	labci "github.com/leadschain/leadschain/abci-app"
 )
 
 func main() {
