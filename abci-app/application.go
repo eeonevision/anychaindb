@@ -28,8 +28,8 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/tendermint/abci/types"
-	"gitlab.com/leadschain/leadschain/state"
-	"gitlab.com/leadschain/leadschain/transaction"
+	"github.com/leadschain/leadschain/state"
+	"github.com/leadschain/leadschain/transaction"
 )
 
 type Application struct {
