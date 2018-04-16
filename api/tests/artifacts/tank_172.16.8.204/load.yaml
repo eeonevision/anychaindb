@@ -1,8 +1,0 @@
-phantom:
-  address: 172.16.8.204:8889 # [Target's address]:[target's port]
-  ammofile: conversions_tank_172.16.8.204.txt
-  load_profile:
-    load_type: rps # schedule load by defining requests per second
-    schedule: const(100, 1440m) # starting from 1rps growing linearly to 10rps during 10 minutes
-telegraf:
-  enabled: false # let's disable telegraf monitoring for this time
