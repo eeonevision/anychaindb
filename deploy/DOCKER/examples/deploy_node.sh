@@ -23,8 +23,8 @@ elif [ "$1" = "node" ]; then
     docker-compose -f leadschain-node-alpine.yaml up
 elif [ "$1" = "clean" ]; then
     echo "Prune docker images"
-    docker-compose -f leadschain-validator-develop-alpine.yaml down && \
-    docker-compose -f leadschain-node-develop-alpine.yaml down && \
+    docker-compose -f leadschain-validator-develop-alpine.yaml down -v --rmi all --remove-orphans && \
+    docker-compose -f leadschain-node-develop-alpine.yaml down -v --rmi all --remove-orphans && \
     docker system prune -f
 fi
 
