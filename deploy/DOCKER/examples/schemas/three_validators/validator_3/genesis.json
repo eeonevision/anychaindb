@@ -1,0 +1,31 @@
+{
+    "genesis_time": "0001-01-01T00:00:00Z",
+    "chain_id": "leadschain",
+    "validators": [
+        {
+            "pub_key": {
+                "type": "AC26791624DE60",
+                "value": "g+njHumkO/Wj0AD3KERpHBIeJeGYUCI6rsiFzNeNH1g="
+            },
+            "power": 100,
+            "name": "silvester"
+        },
+        {
+            "pub_key": {
+                "type": "AC26791624DE60",
+                "value": "B3X0K2+PLLePpkQ63I9xV/4V/XhS+MopljHSWEowRUE="
+            },
+            "power": 100,
+            "name": "brad"
+        },
+        {
+            "pub_key": {
+                "type": "AC26791624DE60",
+                "value": "U1UY26ZWpGfz8SksvMjSXS2f2eufvT1P3S7VxIRqdno="
+            },
+            "power": 100,
+            "name": "justin"
+        }
+    ],
+    "app_hash": ""
+}

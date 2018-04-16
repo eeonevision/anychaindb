@@ -1,0 +1,14 @@
+{
+    "address": "2F856DEF3E7551E1239B34D86FBFD67D935A971E",
+    "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "B3X0K2+PLLePpkQ63I9xV/4V/XhS+MopljHSWEowRUE="
+    },
+    "last_height": 0,
+    "last_round": 0,
+    "last_step": 0,
+    "priv_key": {
+        "type": "954568A3288910",
+        "value": "1tM15AHqVyatus/2tfTYQFN2VqbBxotghLUuQRk6GFkHdfQrb48st4+mRDrcj3FX/hX9eFL4yimWMdJYSjBFQQ=="
+    }
+}

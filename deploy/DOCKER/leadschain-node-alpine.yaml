@@ -1,0 +1,97 @@
+#
+# Copyright (C) 2018 Leads Studio
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+
+version: "3.3"
+
+services:
+
+  leadschain-mongodb:
+    image: mongo:latest
+    container_name: leadschain-mongodb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    network_mode: "host"
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    entrypoint: mongod --bind_ip_all
+
+  leadschain-node:
+    image: leadschain/node:latest
+    container_name: leadschain-node
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    network_mode: "host"
+    expose:
+      - ${P2P_PORT}
+      - ${GRPC_PORT}
+    ports:
+      - ${P2P_PORT}:${P2P_PORT}
+      - ${GRPC_PORT}:${GRPC_PORT}
+    volumes:
+      - ./${CONFIG_PATH}:/tendermint/config
+    depends_on:
+      - leadschain-abci
+    entrypoint: "sh -c \"\
+      tendermint init && \
+      tendermint node --proxy_app=tcp://${NODE_IP}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
+      \""
+
+  leadschain-abci:
+    image: leadschain/abci:latest
+    container_name: leadschain-abci
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    network_mode: "host"
+    expose:
+      - ${ABCI_PORT}
+    ports:
+      - ${ABCI_PORT}:${ABCI_PORT}
+    depends_on:
+      - leadschain-mongodb
+    entrypoint: tmlc-abci --dbhost=mongodb://${NODE_IP}:27017 --addr=tcp://${NODE_IP}:${ABCI_PORT}
+
+  leadschain-rest-api:
+    image: leadschain/api:latest
+    container_name: leadschain-rest-api
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    network_mode: "host"
+    expose:
+      - ${REST_PORT}
+    ports:
+      - ${REST_PORT}:${REST_PORT}
+    depends_on:
+      - leadschain-abci
+    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT}
