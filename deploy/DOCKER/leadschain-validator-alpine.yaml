@@ -40,11 +40,6 @@ services:
     
   leadschain-validator:
     image: leadschain/node:latest
-    build:
-      context: .
-      dockerfile: dockerfiles/leadschain-node-alpine.Dockerfile
-      args:
-        config: ${CONFIG_PATH}
     container_name: leadschain-validator
     logging:
       driver: "json-file"
@@ -58,6 +53,8 @@ services:
     ports:
       - ${P2P_PORT}:${P2P_PORT}
       - ${GRPC_PORT}:${GRPC_PORT}
+    volumes:
+      - ${CONFIG_PATH}:/tendermint/config
     depends_on:
       - leadschain-abci
     entrypoint: "sh -c \"\
@@ -67,9 +64,6 @@ services:
 
   leadschain-abci:
     image: leadschain/abci:latest
-    build:
-      context: .
-      dockerfile: dockerfiles/leadschain-abci-alpine.Dockerfile
     container_name: leadschain-abci
     logging:
       driver: "json-file"
@@ -86,10 +80,7 @@ services:
     entrypoint: tmlc-abci --dbhost=mongodb://${NODE_IP}:27017 --addr=tcp://${NODE_IP}:${ABCI_PORT}
 
   leadschain-rest-api:
-    image: leadschain/rest-api:latest
-    build:
-      context: .
-      dockerfile: dockerfiles/leadschain-rest-api-alpine.Dockerfile
+    image: leadschain/api:latest
     container_name: leadschain-rest-api
     logging:
       driver: "json-file"

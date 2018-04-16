@@ -57,7 +57,7 @@ services:
       - ${P2P_PORT}:${P2P_PORT}
       - ${GRPC_PORT}:${GRPC_PORT}
     volumes:
-      - ./${CONFIG_PATH}:/tendermint/config
+      - ${CONFIG_PATH}:/tendermint/config
     depends_on:
       - leadschain-abci-develop
     entrypoint: "sh -c \"\
