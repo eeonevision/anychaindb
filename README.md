@@ -24,11 +24,11 @@ That gives us some features as:
 ## Architecture
 Below picture represents the general concept of interaction between participants of the system.
 
-![Base concept](../docs/architecture/concept.png)
+![Base concept](docs/architecture/concept.png)
 
 Let's breakdown Blockchain component:
 
-![Nodes communication](../docs/architecture/nodes_cm.png)
+![Nodes communication](docs/architecture/nodes_cm.png)
 
 The advertiser creates an account in our distributed storage and expands the blockchain, or it can deploy the full node on its local machine and integrate with Afifliate Network (CPA).
 Now each user's transition to the advertiser's page from the webmaster will be sent to the blockchain. The fact of clicking will be confirmed by all network participants using consensus algorithm.
