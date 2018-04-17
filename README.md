@@ -36,7 +36,34 @@ If the conversion status is changed and the payment is made, the data will also 
 Now any user of the network will be able to see transactions in real time. To ensure anonymity, additional information about the transaction (name of the offer, advertiser and affiliate) will be available through the interface of the chosen CPA-network from the affiliate account.
 
 ## Installation
-Will be later...
+Officially we provide the easiest way of installation using docker and docker-compose tools.
+#### Prerequirements
+Installed `docker ver. 17+` and `docker-compose` tools. Good manual are [this](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1 "this") and [this](https://docs.docker.com/compose/install/#install-compose "this")
+
+#### Choose your type of node
+Leadschain has two type of nodes:
+- **Validator** node can validate transactions, configured once and need have better hardware than non-validator nodes. If you are a Afiliate Network, choose this type.
+- **Non-validator** node keeps the state and sends the transactions to validator nodes. The can be ease connected to the network because this type is not validates transaction. If you are a Advertiser, choose this type.
+
+#### Configure network
+If you want to connect to existing network, then all you need is *genesis.json* and *config.toml* files from the ran network. Place in to config folder and process to the next section.
+
+Configure a new network is little more sophisticated. About this we will discuss later... (todo)
+#### Deploy network
+Deploy a network with the shell script:
+
+```shell
+sh deploy.sh --type=${NODE_TYPE} --node_ip=${NODE_IP} --config=${CONFIG_PATH}
+```
+Parameters:
+* **type** - *validator* or *node*. Also you can enter *clean* and reset all node data with containers
+* **node_ip** - ip address of node. *Example: 127.0.0.1*
+* **config** - full path to config folder. *Example: /home/ubuntu/CONFIG_FOLDER*
+* p2p_port - port for communication between nodes. *Default: 46656*
+* grpc_port - port for RPC client. *Default: 46657*
+* abci_port - port for ABCI application. *Default: 46658*
+* api_port - port for Leadschain REST API. *Default: 8889*
+* node_args - additional arguments for node. If you connect to existing network, you maybe need to set boot nodes addresses, like: `--node_args="--p2p.persistent_peers=id@host:port"`
 
 ## Additional docs
   * [Leadschain REST API] - REST API for Leadschain client
