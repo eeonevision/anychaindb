@@ -1,8 +1,8 @@
 sudo: required
 
-#language: go
-#go:
-#  - "1.10.x"
+language: go
+go:
+  - "1.10.x"
 
 notifications:
   slack:
@@ -31,7 +31,7 @@ jobs:
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_TAG" != "" ]; then 
           make login build push;
-      elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_TAG" != "" ]; then
+      elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
           make login build_develop push_develop;
       fi
 
