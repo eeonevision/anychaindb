@@ -1,8 +1,8 @@
 sudo: required
 
-language: go
-go:
-  - master
+#language: go
+#go:
+#  - tip
 
 services:
   - docker
@@ -14,3 +14,8 @@ jobs:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     script:
     - make login build build build_develop push push_develop
+
+notifications:
+  slack:
+    on_success: never
+    on_failure: always
