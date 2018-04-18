@@ -1,5 +1,8 @@
 # Leadschain
-[![Build Status](https://travis-ci.org/leadschain/leadschain.svg?branch=master)](https://travis-ci.org/leadschain/leadschain) [![Build Status](https://travis-ci.org/leadschain/leadschain.svg?branch=develop)](https://travis-ci.org/leadschain/leadschain)
+| Branch  | Tests |
+| ------------- | ------------- |
+| master  | [![Build Status](https://travis-ci.org/leadschain/leadschain.svg?branch=master)](https://travis-ci.org/leadschain/leadschain)  |
+| develop  | [![Build Status](https://travis-ci.org/leadschain/leadschain.svg?branch=develop)](https://travis-ci.org/leadschain/leadschain)  |
 
 Leadschain - secure, fast and open blockchain platform for providing transparancy in interaction between advertisers and webmasters.
 Leadschain uses the modern technologies not only from blockchain world. 
