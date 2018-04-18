@@ -97,8 +97,9 @@ func (s *server) Serve() {
 	log.Println("Shutting down server...")
 
 	// shut down gracefully, but wait no longer than 5 seconds before halting
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	srv.Shutdown(ctx)
+	defer cancel()
 
 	log.Println("Server gracefully stopped")
 }

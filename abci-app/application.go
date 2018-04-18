@@ -27,9 +27,9 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/tendermint/abci/types"
 	"github.com/leadschain/leadschain/state"
 	"github.com/leadschain/leadschain/transaction"
+	"github.com/tendermint/abci/types"
 )
 
 type Application struct {
@@ -45,7 +45,7 @@ func NewApplication(dbHost, dbName string) *Application {
 	return &Application{state: state.NewStateFromDB(db.DB(dbName))}
 }
 
-// Info method returns infomation about current state.
+// Info method returns information about current state.
 // All sizes represented in kilobytes.
 func (app *Application) Info() (resInfo types.ResponseInfo) {
 	var stats map[string]interface{}
