@@ -1,8 +1,15 @@
 sudo: required
 
-#language: go
-#go:
-#  - tip
+language: go
+go:
+  - tip
+
+before_install:
+  - go get -v ./...
+  - cd ${TRAVIS_BUILD_DIR}/transaction
+  - go generate
+  - cd ${TRAVIS_BUILD_DIR}/state
+  - go generate
 
 services:
   - docker
