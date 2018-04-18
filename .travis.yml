@@ -1,16 +1,13 @@
 sudo: required
 
-language: go
-go:
-  - "1.10.x"
+#language: go
+#go:
+#  - "1.10.x"
 
-install: true
-
-script:
-  - cd ${TRAVIS_BUILD_DIR}/transaction
-  - go generate
-  - cd ${TRAVIS_BUILD_DIR}/state
-  - go generate
+notifications:
+  slack:
+    on_success: never
+    on_failure: always
 
 services:
   - docker
@@ -22,8 +19,3 @@ jobs:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     script:
     - make login build build build_develop push push_develop
-
-notifications:
-  slack:
-    on_success: never
-    on_failure: always
