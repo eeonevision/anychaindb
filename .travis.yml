@@ -2,10 +2,10 @@ sudo: required
 
 language: go
 go:
-  - tip
+  - "1.10.x"
 
 before_install:
-  - go get -v ./...
+  - go get -t -v ./...
   - cd ${TRAVIS_BUILD_DIR}/transaction
   - go generate
   - cd ${TRAVIS_BUILD_DIR}/state

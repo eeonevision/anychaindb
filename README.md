@@ -1,5 +1,5 @@
 # Leadschain
-[![Go Report Card](https://goreportcard.com/badge/github.com/leadschain/leadschain)](https://goreportcard.com/report/github.com/leadschain/leadschain) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Go Report Card](https://goreportcard.com/badge/github.com/leadschain/leadschain)](https://goreportcard.com/report/github.com/leadschain/leadschain) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 | Branch  | Tests |
 | ------------- | ------------- |
