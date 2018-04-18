@@ -17,5 +17,21 @@ jobs:
   - stage: build docker images
     before_script:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    # check builds
     script:
-    - make login build build build_develop push push_develop
+    - if [ "$TRAVIS_BRANCH" == "master" ]; then 
+          make build;
+      elif [ "$TRAVIS_BRANCH" == "develop" ]; then
+          make build_develop;
+      fi
+  - stage: deploy docker to hub
+    before_script:
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    # deploy release to docker hub
+    script:
+    - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_TAG" != "" ]; then 
+          make login build push;
+      elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_TAG" != "" ]; then
+          make login build_develop push_develop;
+      fi
+
