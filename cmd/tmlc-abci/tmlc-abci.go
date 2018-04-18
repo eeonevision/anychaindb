@@ -25,10 +25,10 @@ import (
 	"flag"
 	"os"
 
+	labci "github.com/leadschain/leadschain/abci-app"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/common"
 	"github.com/tendermint/tmlibs/log"
-	labci "github.com/leadschain/leadschain/abci-app"
 )
 
 func main() {

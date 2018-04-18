@@ -27,11 +27,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/tendermint/tendermint/rpc/client"
-	"github.com/tendermint/tendermint/types"
 	"github.com/leadschain/leadschain/crypto"
 	"github.com/leadschain/leadschain/state"
 	"github.com/leadschain/leadschain/transaction"
+	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/tendermint/tendermint/types"
 )
 
 type BaseClient struct {

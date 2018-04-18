@@ -28,8 +28,8 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/tendermint/abci/types"
 	"github.com/leadschain/leadschain/state"
+	"github.com/tendermint/abci/types"
 )
 
 type PersistentApplication struct {

@@ -28,8 +28,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/leadschain/leadschain/client"
-	"github.com/mitchellh/mapstructure"
 	"github.com/leadschain/leadschain/crypto"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Conversion struct describes conversion related fields
