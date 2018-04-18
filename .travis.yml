@@ -4,6 +4,10 @@ language: go
 go:
   - "1.10.x"
 
+before_install:
+  - cd ${TRAVIS_BUILD_DIR}/transaction && go generate
+  - cd ${TRAVIS_BUILD_DIR}/state && go generate
+
 notifications:
   slack:
     on_success: never
