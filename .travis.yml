@@ -1,0 +1,14 @@
+sudo: required
+
+language: go
+
+services:
+  - docker
+
+jobs:
+  include:
+  - stage: build docker images
+    before_script:
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    script:
+    - make login build build build_develop push push_develop
