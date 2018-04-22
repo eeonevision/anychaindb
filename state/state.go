@@ -23,12 +23,22 @@ package state
 
 import (
 	"github.com/globalsign/mgo"
+	"golang.org/x/crypto/blake2b"
 )
 
 type State struct {
 	DB *mgo.Database
 }
 
+// NewStateFromDB method constructs MongoDB state
 func NewStateFromDB(db *mgo.Database) *State {
 	return &State{db}
+}
+
+func (s *State) hash(data string) []byte {
+	hash, err := blake2b.New256([]byte(data))
+	if err != nil {
+		return nil
+	}
+	return hash.Sum(nil)
 }

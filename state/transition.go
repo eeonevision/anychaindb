@@ -48,7 +48,9 @@ func (s *State) AddTransition(transition *Transition) error {
 }
 
 func (s *State) SetTransition(transition *Transition) error {
-	return s.DB.C(transitionsCollection).Insert(transition)
+
+	return s.DB.C(transitionsCollection).Insert(
+		s.encryptTransition(transition))
 }
 
 func (s *State) HasTransition(id string) bool {
@@ -69,4 +71,18 @@ func (s *State) ListTransitions() (result []*Transition, err error) {
 
 func (s *State) SearchTransitions(query interface{}, limit, offset int) (result []*Transition, err error) {
 	return result, s.DB.C(transitionsCollection).Find(query).Skip(offset).Limit(limit).All(&result)
+}
+
+func (s *State) encryptTransition(transition *Transition) *Transition {
+	// Encrypt fields with BLAKE2B 256-bit algorithm
+	return &Transition{
+		ID:                  transition.ID,
+		AdvertiserAccountID: transition.AdvertiserAccountID,
+		AffiliateAccountID:  transition.AffiliateAccountID,
+		ClickID:             string(s.hash(transition.ClickID)),
+		OfferID:             string(s.hash(transition.OfferID)),
+		StreamID:            string(s.hash(transition.StreamID)),
+		CreatedAt:           transition.CreatedAt,
+		ExpiresIn:           transition.ExpiresIn,
+	}
 }
