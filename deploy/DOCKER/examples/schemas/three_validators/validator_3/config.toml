@@ -58,7 +58,7 @@ laddr = "tcp://0.0.0.0:46657"
 grpc_laddr = ""
 
 # Activate unsafe RPC commands like /dial_seeds and /unsafe_flush_mempool
-unsafe = true
+unsafe = false
 
 ##### peer to peer configuration options #####
 [p2p]
