@@ -51,7 +51,8 @@ func (s *State) AddConversion(conversion *Conversion) error {
 }
 
 func (s *State) SetConversion(conversion *Conversion) error {
-	return s.DB.C(conversionsCollection).Insert(conversion)
+	return s.DB.C(conversionsCollection).Insert(
+		s.encryptConversion(conversion))
 }
 
 func (s *State) HasConversion(id string) bool {
@@ -72,4 +73,21 @@ func (s *State) ListConversions() (result []*Conversion, err error) {
 
 func (s *State) SearchConversions(query interface{}, limit, offset int) (result []*Conversion, err error) {
 	return result, s.DB.C(conversionsCollection).Find(query).Skip(offset).Limit(limit).All(&result)
+}
+
+func (s *State) encryptConversion(conversion *Conversion) *Conversion {
+	// Encrypt fields with BLAKE2B 256-bit algorithm
+	return &Conversion{
+		ID:                  conversion.ID,
+		AdvertiserAccountID: conversion.AdvertiserAccountID,
+		AffiliateAccountID:  conversion.AffiliateAccountID,
+		ClickID:             string(s.hash(conversion.ClickID)),
+		OfferID:             string(s.hash(conversion.OfferID)),
+		ClientID:            string(s.hash(conversion.ClientID)),
+		GoalID:              string(s.hash(conversion.GoalID)),
+		StreamID:            string(s.hash(conversion.StreamID)),
+		CreatedAt:           conversion.CreatedAt,
+		Comment:             string(s.hash(conversion.Comment)),
+		Status:              string(s.hash(conversion.Status)),
+	}
 }
