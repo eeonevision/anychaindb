@@ -87,7 +87,7 @@ func (s *State) encryptConversion(conversion *Conversion) *Conversion {
 		GoalID:              string(s.hash(conversion.GoalID)),
 		StreamID:            string(s.hash(conversion.StreamID)),
 		CreatedAt:           conversion.CreatedAt,
-		Comment:             string(s.hash(conversion.Comment)),
-		Status:              string(s.hash(conversion.Status)),
+		Comment:             conversion.Comment,
+		Status:              conversion.Status,
 	}
 }
