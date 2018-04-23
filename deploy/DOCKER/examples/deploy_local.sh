@@ -1,7 +1,7 @@
 #!/bin/bash
 
 type=""
-export NODE_IP="$(ip route get 8.8.8.8 | awk '{print $NF; exit}')"
+export NODE_IP="0.0.0.0"
 export CONFIG_PATH="~/leadschain/config"
 export DB_PORT=27017
 export P2P_PORT=46656
@@ -56,38 +56,26 @@ case $i in
 esac
 done
 
-#create leadschain-compose folder
-rm -r -f ~/leadschain/deploy
-mkdir -p ~/leadschain/deploy
-
-#move to leadschain-compose folder
-cd ~/leadschain/deploy
+# Move to docker-compose files path
+cd ../
 
 if [ "$type" = "validator-dev" ]; then
     echo "Installing Leadschain Validator node [DEVELOP]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-validator-develop.yaml && \
     docker-compose -f leadschain-validator-develop.yaml up
 elif [ "$type" = "node-dev" ]; then
     echo "Installing Leadschain Non-Validator node [DEVELOP]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-node-develop.yaml && \
     docker-compose -f leadschain-node-develop.yaml up
 elif [ "$type" = "validator" ]; then
     echo "Installing Leadschain Validator node [RELEASE]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-validator.yaml && \
     docker-compose -f leadschain-validator.yaml up
 elif [ "$type" = "node" ]; then
     echo "Installing Leadschain Non-Validator node [RELEASE]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-node.yaml && \
     docker-compose -f leadschain-node.yaml up
 elif [ "$type" = "clean" ]; then
     echo "Prune docker images"
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-validator-develop.yaml && \
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-node-develop.yaml && \
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-validator.yaml && \
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-node.yaml && \
-    docker-compose -f leadschain-validator-develop.yaml down -v --rmi all --remove-orphans && \
-    docker-compose -f leadschain-node-develop.yaml down -v --rmi all --remove-orphans && \
-    docker-compose -f leadschain-validator.yaml down -v --rmi all --remove-orphans && \
-    docker-compose -f leadschain-node.yaml down -v --rmi all --remove-orphans && \
+    docker-compose -f leadschain-validator-develop.yaml down --rmi all --remove-orphans && \
+    docker-compose -f leadschain-node-develop.yaml down --rmi all --remove-orphans && \
+    docker-compose -f leadschain-validator.yaml down --rmi all --remove-orphans && \
+    docker-compose -f leadschain-node.yaml down --rmi all --remove-orphans && \
     docker system prune -f
 fi

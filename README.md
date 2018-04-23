@@ -66,6 +66,7 @@ Parameters:
 * **type** - *validator* or *node*. Also you can enter *clean* and reset all node data with containers
 * **node_ip** - ip address of node. *Example: 127.0.0.1*
 * **config** - full path to config folder. *Example: /home/ubuntu/CONFIG_FOLDER*
+* db_port - port for communication with MongoDB container. *Default: 27017*
 * p2p_port - port for communication between nodes. *Default: 46656*
 * grpc_port - port for RPC client. *Default: 46657*
 * abci_port - port for ABCI application. *Default: 46658*
