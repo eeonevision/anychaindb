@@ -31,13 +31,33 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
-    network_mode: "host"
+    networks:
+      back:
+        ipv4_address: 172.16.238.02
     expose:
       - 27017
-    ports:
-      - 27017:27017
     entrypoint: mongod --bind_ip_all
     
+  leadschain-abci-develop:
+    image: leadschain/abci:develop
+    build:
+      context: .
+      dockerfile: dockerfiles/develop/leadschain-abci-develop.Dockerfile
+    container_name: leadschain-abci-develop
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      back:
+        ipv4_address: 172.16.238.03
+    expose:
+      - ${ABCI_PORT}
+    depends_on:
+      - leadschain-mongodb
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:27017 --addr=tcp://172.16.238.03:${ABCI_PORT}
+
   leadschain-node-develop:
     image: leadschain/node:develop
     build:
@@ -62,28 +82,8 @@ services:
       - leadschain-abci-develop
     entrypoint: "sh -c \"\
       tendermint init && \
-      tendermint node --proxy_app=tcp://${NODE_IP}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
+      tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
       \""
-
-  leadschain-abci-develop:
-    image: leadschain/abci:develop
-    build:
-      context: .
-      dockerfile: dockerfiles/develop/leadschain-abci-develop.Dockerfile
-    container_name: leadschain-abci-develop
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "3"
-    network_mode: "host"
-    expose:
-      - ${ABCI_PORT}
-    ports:
-      - ${ABCI_PORT}:${ABCI_PORT}
-    depends_on:
-      - leadschain-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://${NODE_IP}:27017 --addr=tcp://${NODE_IP}:${ABCI_PORT}
 
   leadschain-rest-api-develop:
     image: leadschain/api:develop
@@ -104,3 +104,12 @@ services:
     depends_on:
       - leadschain-abci-develop
     entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT}
+
+networks:
+  back:
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24

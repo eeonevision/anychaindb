@@ -53,7 +53,7 @@ services:
       - ${ABCI_PORT}
     depends_on:
       - leadschain-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:27017 --addr=tcp://leadschain-abci:${ABCI_PORT}
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:27017 --addr=tcp://172.16.238.03:${ABCI_PORT}
     
   leadschain-validator:
     image: leadschain/node:latest
@@ -69,6 +69,7 @@ services:
       - ${GRPC_PORT}
     ports:
       - ${P2P_PORT}:${P2P_PORT}
+      - ${GRPC_PORT}:${GRPC_PORT}
     volumes:
       - ${CONFIG_PATH}:/tendermint/config
     depends_on:
