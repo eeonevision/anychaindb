@@ -3,6 +3,7 @@
 type=""
 export NODE_IP="0.0.0.0"
 export CONFIG_PATH="~/leadschain/config"
+export DB_PORT=27017
 export P2P_PORT=46656
 export GRPC_PORT=46657
 export ABCI_PORT=46658
@@ -22,6 +23,10 @@ case $i in
     ;;
     --config=*)
         export CONFIG_PATH="${i#*=}"
+        shift
+    ;;
+    --db_port=*)
+        export DB_PORT="${i#*=}"
         shift
     ;;
     --p2p_port=*)

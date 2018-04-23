@@ -35,7 +35,7 @@ services:
       back:
         ipv4_address: 172.16.238.02
     expose:
-      - 27017
+      - ${DB_PORT}
     entrypoint: mongod --bind_ip_all
     
   leadschain-abci-develop:
@@ -56,7 +56,7 @@ services:
       - ${ABCI_PORT}
     depends_on:
       - leadschain-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:27017 --addr=tcp://172.16.238.03:${ABCI_PORT}
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT}
 
   leadschain-node-develop:
     image: leadschain/node:develop
