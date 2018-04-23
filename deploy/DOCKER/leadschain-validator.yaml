@@ -32,10 +32,10 @@ services:
         max-size: "20m"
         max-file: "3"
     networks:
-      front:
+      back:
         ipv4_address: 172.16.238.02
-    ports:
-      - 27017:27017
+    expose:
+      - 27017
     entrypoint: mongod --bind_ip_all
 
   leadschain-abci:
@@ -47,10 +47,10 @@ services:
         max-size: "20m"
         max-file: "3"
     networks:
-      front:
+      back:
         ipv4_address: 172.16.238.03
-    ports:
-      - ${ABCI_PORT}:${ABCI_PORT}
+    expose:
+      - ${ABCI_PORT}
     depends_on:
       - leadschain-mongodb
     entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:27017 --addr=tcp://leadschain-abci:${ABCI_PORT}
@@ -69,7 +69,6 @@ services:
       - ${GRPC_PORT}
     ports:
       - ${P2P_PORT}:${P2P_PORT}
-      - ${GRPC_PORT}:${GRPC_PORT}
     volumes:
       - ${CONFIG_PATH}:/tendermint/config
     depends_on:
@@ -97,7 +96,7 @@ services:
     entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT}
 
 networks:
-  front:
+  back:
     # use the bridge driver, but enable IPv6
     driver: bridge
     internal: true
