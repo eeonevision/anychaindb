@@ -40,24 +40,23 @@ type API interface {
 type AccountAPI interface {
 	CreateAccount() (id, pub, priv string, err error)
 	GetAccount(id string) (*state.Account, error)
-	DeleteAccount(id string) error
-	ListAccounts() ([]*state.Account, error)
+	ListAccounts() ([]state.Account, error)
 }
 
 // TransitionAPI interface provides all transition related methods
 type TransitionAPI interface {
 	AddTransition(affiliateID, advertiserID, clickID, streamID, offerID string, expiresIn int64) (ID string, err error)
 	GetTransition(ID string) (*state.Transition, error)
-	ListTransitions() ([]*state.Transition, error)
-	SearchTransitions(query []byte) ([]*state.Transition, error)
+	ListTransitions() ([]state.Transition, error)
+	SearchTransitions(query []byte) ([]state.Transition, error)
 }
 
 // ConversionAPI interface provides all conversion related methods
 type ConversionAPI interface {
 	AddConversion(affiliateID, advertiserID, clickID, streamID, clientID, goalID, offerID, status, comment string) (ID string, err error)
 	GetConversion(ID string) (*state.Conversion, error)
-	ListConversions() ([]*state.Conversion, error)
-	SearchConversions(query []byte) ([]*state.Conversion, error)
+	ListConversions() ([]state.Conversion, error)
+	SearchConversions(query []byte) ([]state.Conversion, error)
 }
 
 // NewAPI constructs a new API instances based on an http transport
@@ -90,11 +89,7 @@ func (api *apiClient) GetAccount(id string) (*state.Account, error) {
 	return api.base.GetAccount(id)
 }
 
-func (api *apiClient) DeleteAccount(id string) error {
-	return api.base.DelAccount(id)
-}
-
-func (api *apiClient) ListAccounts() ([]*state.Account, error) {
+func (api *apiClient) ListAccounts() ([]state.Account, error) {
 	return api.base.ListAccounts()
 }
 
@@ -121,11 +116,11 @@ func (api *apiClient) GetTransition(id string) (*state.Transition, error) {
 	return api.base.GetTransition(id)
 }
 
-func (api *apiClient) ListTransitions() ([]*state.Transition, error) {
+func (api *apiClient) ListTransitions() ([]state.Transition, error) {
 	return api.base.ListTransitions()
 }
 
-func (api *apiClient) SearchTransitions(query []byte) ([]*state.Transition, error) {
+func (api *apiClient) SearchTransitions(query []byte) ([]state.Transition, error) {
 	return api.base.SearchTransitions(query)
 }
 
@@ -155,10 +150,10 @@ func (api *apiClient) GetConversion(id string) (*state.Conversion, error) {
 	return api.base.GetConversion(id)
 }
 
-func (api *apiClient) ListConversions() ([]*state.Conversion, error) {
+func (api *apiClient) ListConversions() ([]state.Conversion, error) {
 	return api.base.ListConversions()
 }
 
-func (api *apiClient) SearchConversions(query []byte) ([]*state.Conversion, error) {
+func (api *apiClient) SearchConversions(query []byte) ([]state.Conversion, error) {
 	return api.base.SearchConversions(query)
 }

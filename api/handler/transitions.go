@@ -138,6 +138,11 @@ func GetTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
+	// Transition not found
+	if trs == nil {
+		writeResult(http.StatusNotFound, "Empty list", nil, w)
+		return
+	}
 	writeResult(http.StatusOK, "OK", trs, w)
 	return
 }
@@ -157,6 +162,11 @@ func GetTransitionDetailsHandler(w http.ResponseWriter, r *http.Request, ps http
 	trs, err := api.GetTransition(id)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+	// Transition not found
+	if trs == nil {
+		writeResult(http.StatusNotFound, "Not Found", nil, w)
 		return
 	}
 	writeResult(http.StatusOK, "OK", trs, w)

@@ -23,7 +23,6 @@ package client
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 
@@ -62,57 +61,26 @@ func (c *BaseClient) AddAccount(acc *state.Account) error {
 	return nil
 }
 
-func (c *BaseClient) DelAccount(id string) error {
-	acc := state.Account{ID: id}
-	txBytes, err := acc.MarshalMsg(nil)
-	if err != nil {
-		return err
-	}
-	tx := transaction.New(transaction.AccountDel, txBytes)
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.CheckTx.IsErr() {
-		return fmt.Errorf("%v: %s", res.CheckTx.GetCode(), string(res.CheckTx.GetLog()))
-	}
-	if res.DeliverTx.IsErr() {
-		return fmt.Errorf("%v: %s", res.DeliverTx.GetCode(), string(res.DeliverTx.GetLog()))
-	}
-	return nil
-}
-
 func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
 	resp, err := c.tm.ABCIQuery("accounts", []byte(id))
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Account not found")
-	}
 	acc := &state.Account{}
-	if err := json.Unmarshal(resp.Response.GetValue(), acc); err != nil {
-		log.Printf("Request account but got rubbish: %v", string(resp.Response.GetValue()))
+	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
 		return nil, err
 	}
 	return acc, nil
 }
 
-func (c *BaseClient) ListAccounts() ([]*state.Account, error) {
+func (c *BaseClient) ListAccounts() ([]state.Account, error) {
 	resp, err := c.tm.ABCIQuery("accounts", nil)
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Empty accounts list")
-	}
-	acc := []*state.Account{}
-	if err := json.Unmarshal(resp.Response.GetValue(), acc); err != nil {
+	acc := []state.Account{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
 		return nil, err
 	}
 	return acc, nil
@@ -143,44 +111,34 @@ func (c *BaseClient) GetTransition(id string) (*state.Transition, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Transition not found")
-	}
 	tr := &state.Transition{}
-	if err := json.Unmarshal(resp.Response.GetValue(), tr); err != nil {
-		log.Printf("Request transition but got rubbish: %v", string(resp.Response.GetValue()))
+	if err := json.Unmarshal(resp.Response.GetValue(), &tr); err != nil {
 		return nil, err
 	}
 	return tr, nil
 }
 
-func (c *BaseClient) ListTransitions() ([]*state.Transition, error) {
+func (c *BaseClient) ListTransitions() ([]state.Transition, error) {
 	resp, err := c.tm.ABCIQuery("transitions", nil)
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Empty transitions list")
-	}
-	tr := []*state.Transition{}
-	if err := json.Unmarshal(resp.Response.GetValue(), tr); err != nil {
+	tr := []state.Transition{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &tr); err != nil {
 		return nil, err
 	}
 	return tr, nil
 }
 
-func (c *BaseClient) SearchTransitions(searchQuery []byte) ([]*state.Transition, error) {
+func (c *BaseClient) SearchTransitions(searchQuery []byte) ([]state.Transition, error) {
 	resp, err := c.tm.ABCIQuery("transitions/search", searchQuery)
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Empty result list")
-	}
-	tr := []*state.Transition{}
-	if err := json.Unmarshal(resp.Response.GetValue(), tr); err != nil {
+	tr := []state.Transition{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &tr); err != nil {
 		return nil, err
 	}
 	return tr, nil
@@ -211,44 +169,35 @@ func (c *BaseClient) GetConversion(id string) (*state.Conversion, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Conversion not found")
-	}
 	cv := &state.Conversion{}
-	if err := json.Unmarshal(resp.Response.GetValue(), cv); err != nil {
-		log.Printf("Request conversion but got rubbish: %v", string(resp.Response.GetValue()))
+	if err := json.Unmarshal(resp.Response.GetValue(), &cv); err != nil {
 		return nil, err
 	}
+	fmt.Println(cv)
 	return cv, nil
 }
 
-func (c *BaseClient) ListConversions() ([]*state.Conversion, error) {
+func (c *BaseClient) ListConversions() ([]state.Conversion, error) {
 	resp, err := c.tm.ABCIQuery("conversions", nil)
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Empty conversion list")
-	}
-	cv := []*state.Conversion{}
-	if err := json.Unmarshal(resp.Response.GetValue(), cv); err != nil {
+	cv := []state.Conversion{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &cv); err != nil {
 		return nil, err
 	}
 	return cv, nil
 }
 
-func (c *BaseClient) SearchConversions(searchQuery []byte) ([]*state.Conversion, error) {
+func (c *BaseClient) SearchConversions(searchQuery []byte) ([]state.Conversion, error) {
 	resp, err := c.tm.ABCIQuery("conversions/search", searchQuery)
 	if err != nil {
 		log.Print(err)
 		return nil, err
 	}
-	if len(resp.Response.GetValue()) == 0 {
-		return nil, errors.New("Empty result list")
-	}
-	cv := []*state.Conversion{}
-	if err := json.Unmarshal(resp.Response.GetValue(), cv); err != nil {
+	cv := []state.Conversion{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &cv); err != nil {
 		return nil, err
 	}
 	return cv, nil
