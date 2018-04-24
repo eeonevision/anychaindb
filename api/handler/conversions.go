@@ -139,12 +139,17 @@ func GetConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.
 		Offset: offset,
 	}
 	searchReqStr, _ := json.Marshal(searchReq)
-	trs, err := api.SearchConversions(searchReqStr)
+	cnv, err := api.SearchConversions(searchReqStr)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	writeResult(http.StatusOK, "OK", trs, w)
+	// Empty conversions list
+	if cnv == nil {
+		writeResult(http.StatusNotFound, "Empty list", nil, w)
+		return
+	}
+	writeResult(http.StatusOK, "OK", cnv, w)
 	return
 }
 
@@ -160,11 +165,16 @@ func GetConversionDetailsHandler(w http.ResponseWriter, r *http.Request, ps http
 		return
 	}
 	api := client.NewAPI(endpoint, nil, "")
-	trs, err := api.GetConversion(id)
+	cnv, err := api.GetConversion(id)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	writeResult(http.StatusOK, "OK", trs, w)
+	// Conversion not found
+	if cnv == nil {
+		writeResult(http.StatusNotFound, "Not Found", nil, w)
+		return
+	}
+	writeResult(http.StatusOK, "OK", cnv, w)
 	return
 }
