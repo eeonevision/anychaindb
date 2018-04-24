@@ -212,15 +212,12 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				result interface{}
 				err    error
 			)
-			if reqQuery.Data == nil {
-				result, err = app.state.ListAccounts()
-				log.Printf("Got account list: %+s", result)
-			} else {
+			if reqQuery.Data != nil {
 				id := string(reqQuery.Data)
 				result, err = app.state.GetAccount(id)
 				log.Printf("Got account: %+v", result)
 			}
-			if err != nil {
+			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
 				resQuery.Log = err.Error()
 				return
@@ -234,14 +231,11 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				result interface{}
 				err    error
 			)
-			if reqQuery.Data == nil {
-				result, err = app.state.ListTransitions()
-				log.Printf("Got transitions list: %+s", result)
-			} else {
+			if reqQuery.Data != nil {
 				result, err = app.state.GetTransition(string(reqQuery.Data))
 				log.Printf("Got transition: %+v", result)
 			}
-			if err != nil {
+			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
 				resQuery.Log = err.Error()
 				return
@@ -269,7 +263,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			}
 			// Search transitions in Database
 			result, err = app.state.SearchTransitions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
-			if err != nil {
+			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return
@@ -284,14 +278,11 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				result interface{}
 				err    error
 			)
-			if reqQuery.Data == nil {
-				result, err = app.state.ListConversions()
-				log.Printf("Got conversions list: %+s", result)
-			} else {
+			if reqQuery.Data != nil {
 				result, err = app.state.GetConversion(string(reqQuery.Data))
 				log.Printf("Got conversion: %+v", result)
 			}
-			if err != nil {
+			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
 				resQuery.Log = err.Error()
 				return
@@ -319,7 +310,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			}
 			// Search conversions in Database
 			result, err = app.state.SearchConversions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
-			if err != nil {
+			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return

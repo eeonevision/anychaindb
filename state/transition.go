@@ -79,9 +79,9 @@ func (s *State) encryptTransition(transition *Transition) *Transition {
 		ID:                  transition.ID,
 		AdvertiserAccountID: transition.AdvertiserAccountID,
 		AffiliateAccountID:  transition.AffiliateAccountID,
-		ClickID:             string(s.hash(transition.ClickID)),
-		OfferID:             string(s.hash(transition.OfferID)),
-		StreamID:            string(s.hash(transition.StreamID)),
+		ClickID:             s.hash(transition.ClickID),
+		OfferID:             s.hash(transition.OfferID),
+		StreamID:            s.hash(transition.StreamID),
 		CreatedAt:           transition.CreatedAt,
 		ExpiresIn:           transition.ExpiresIn,
 	}
