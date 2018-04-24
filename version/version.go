@@ -6,7 +6,7 @@ const Fix = "1"
 
 var (
 	// Version is the current version of Leadschain platform
-	Version = Major + "." + Minor + "." + Fix
+	Version = "1.1.1"
 
 	// GitCommit is the current HEAD set using ldflags.
 	GitCommit string
