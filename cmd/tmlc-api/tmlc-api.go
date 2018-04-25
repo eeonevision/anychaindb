@@ -35,7 +35,7 @@ func main() {
 	endpointPtr := flag.String("endpoint", "http://0.0.0.0:46657", "Validator grpc endpoint address")
 	ipPtr := flag.String("ip", "localhost", "Listen host ip")
 	portPtr := flag.String("port", "8888", "Listen host port")
-	logLevel := flag.String("loglevel", "*:error", "log level for rest api: rest-api:error")
+	logLevel := flag.String("loglevel", "*:info", "log level for leadschain api module: rest-api:info")
 	flag.Parse()
 
 	// Create server

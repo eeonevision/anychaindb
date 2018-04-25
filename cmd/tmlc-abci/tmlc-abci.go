@@ -39,7 +39,7 @@ func main() {
 	abciPtr := flag.String("abci", "socket", "socket | grpc")
 	dbHost := flag.String("dbhost", "localhost", "database host path")
 	dbName := flag.String("dbname", "leadschain", "database name")
-	logLevel := flag.String("loglevel", "*:error", "log level for abci modules: abci-app:error,abci-server:info,*:error")
+	logLevel := flag.String("loglevel", "*:info", "log level for abci modules: abci-app:info,abci-server:info,*:error")
 	flag.Parse()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))

@@ -36,7 +36,7 @@ services:
         ipv4_address: 172.16.238.02
     expose:
       - ${DB_PORT}
-    entrypoint: mongod --bind_ip_all
+    entrypoint: mongod --bind_ip_all --quiet
 
   leadschain-abci:
     image: leadschain/abci:latest
@@ -53,7 +53,7 @@ services:
       - ${ABCI_PORT}
     depends_on:
       - leadschain-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT}
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:error
 
   leadschain-node:
     image: leadschain/node:latest
@@ -94,7 +94,7 @@ services:
       - ${REST_PORT}:${REST_PORT}
     depends_on:
       - leadschain-abci
-    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT}
+    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error
 
 networks:
   back:
