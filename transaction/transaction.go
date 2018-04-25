@@ -46,7 +46,6 @@ type TransactionType string
 
 const (
 	AccountAdd    TransactionType = "add-account"
-	AccountDel    TransactionType = "del-account"
 	TransitionAdd TransactionType = "add-transition"
 	ConversionAdd TransactionType = "add-conversion"
 )

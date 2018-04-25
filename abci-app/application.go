@@ -23,7 +23,8 @@ package app
 
 import (
 	"encoding/json"
-	"log"
+
+	"github.com/tendermint/tmlibs/log"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -32,11 +33,20 @@ import (
 	"github.com/tendermint/abci/types"
 )
 
+// Limit response elements count
+const (
+	resLimit  = 500
+	resOffset = 0
+)
+
+// Application inherits BaseApplication and keeps state of leadschain
 type Application struct {
 	types.BaseApplication
-	state *state.State
+	state  *state.State
+	logger log.Logger
 }
 
+// NewApplication method initializes new application with MongoDB state
 func NewApplication(dbHost, dbName string) *Application {
 	db, err := mgo.Dial(dbHost)
 	if err != nil {
@@ -45,16 +55,23 @@ func NewApplication(dbHost, dbName string) *Application {
 	return &Application{state: state.NewStateFromDB(db.DB(dbName))}
 }
 
+// SetLogger method set logger for Application
+func (app *Application) SetLogger(l log.Logger) {
+	app.logger = l
+}
+
 // Info method returns information about current state.
 // All sizes represented in kilobytes.
 func (app *Application) Info() (resInfo types.ResponseInfo) {
 	var stats map[string]interface{}
-	if err := app.state.DB.Run(bson.M{"dbStats": 1, "scale": 1024}, &stats); err != nil {
-		return types.ResponseInfo{Data: err.Error()}
+	if err := app.state.DB.Run(bson.M{"dbStats": 1}, &stats); err != nil {
+		app.logger.Error("Getting state info error", "error", err.Error())
+		return
 	}
 	res, err := json.Marshal(stats)
 	if err != nil {
-		return types.ResponseInfo{Data: err.Error()}
+		app.logger.Error("Encoding state info error", "error", err.Error())
+		return
 	}
 	return types.ResponseInfo{Data: string(res)}
 }
@@ -72,16 +89,6 @@ func (app *Application) DeliverTx(txBytes []byte) types.ResponseDeliverTx {
 	case transaction.AccountAdd:
 		{
 			if err := deliverAccountAddTransaction(tx, app.state); err != nil {
-				return types.ResponseDeliverTx{
-					Code: CodeTypeDeliverTxError,
-					Log:  err.Error(),
-				}
-			}
-		}
-
-	case transaction.AccountDel:
-		{
-			if err := deliverAccountDelTransaction(tx, app.state); err != nil {
 				return types.ResponseDeliverTx{
 					Code: CodeTypeDeliverTxError,
 					Log:  err.Error(),
@@ -132,15 +139,6 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx {
 	case transaction.AccountAdd:
 		{
 			if err := checkAccountAddTransaction(tx, app.state); err != nil {
-				return types.ResponseCheckTx{
-					Code: CodeTypeCheckTxError,
-					Log:  err.Error(),
-				}
-			}
-		}
-	case transaction.AccountDel:
-		{
-			if err := checkAccountDelTransaction(tx, app.state); err != nil {
 				return types.ResponseCheckTx{
 					Code: CodeTypeCheckTxError,
 					Log:  err.Error(),
@@ -215,10 +213,44 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			if reqQuery.Data != nil {
 				id := string(reqQuery.Data)
 				result, err = app.state.GetAccount(id)
-				log.Printf("Got account: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
+				resQuery.Log = err.Error()
+				return
+			}
+			bs, _ := json.Marshal(result)
+			resQuery.Value = bs
+		}
+	case "accounts/search":
+		{
+			var (
+				result interface{}
+				err    error
+			)
+			if reqQuery.Data == nil {
+				resQuery.Code = CodeEmptySearchQuery
+				resQuery.Log = "Search query is empty"
+				return
+			}
+			// Unmarshal search query
+			var mgoQuery MongoQuery
+			if err = json.Unmarshal(reqQuery.Data, &mgoQuery); err != nil {
+				resQuery.Code = CodeParseSearchQueryError
+				resQuery.Log = err.Error()
+				return
+			}
+			// Check limit and offset values
+			if mgoQuery.Limit > resLimit || resOffset <= 0 {
+				mgoQuery.Limit = resLimit
+			}
+			if mgoQuery.Offset < resOffset {
+				mgoQuery.Offset = resOffset
+			}
+			// Search accounts in Database
+			result, err = app.state.SearchAccounts(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
+			if err != nil && err != mgo.ErrNotFound {
+				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return
 			}
@@ -233,7 +265,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			)
 			if reqQuery.Data != nil {
 				result, err = app.state.GetTransition(string(reqQuery.Data))
-				log.Printf("Got transition: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
@@ -261,6 +292,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
+			// Check limit and offset values
+			if mgoQuery.Limit > resLimit || resOffset <= 0 {
+				mgoQuery.Limit = resLimit
+			}
+			if mgoQuery.Offset < resOffset {
+				mgoQuery.Offset = resOffset
+			}
 			// Search transitions in Database
 			result, err = app.state.SearchTransitions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
 			if err != nil && err != mgo.ErrNotFound {
@@ -268,7 +306,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
-			log.Printf("Got transitions: %+s", result)
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}
@@ -280,7 +317,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			)
 			if reqQuery.Data != nil {
 				result, err = app.state.GetConversion(string(reqQuery.Data))
-				log.Printf("Got conversion: %+v", result)
+				app.logger.Debug("Got conversion: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
@@ -308,6 +345,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
+			// Check limit and offset values
+			if mgoQuery.Limit > resLimit || resOffset <= 0 {
+				mgoQuery.Limit = resLimit
+			}
+			if mgoQuery.Offset < resOffset {
+				mgoQuery.Offset = resOffset
+			}
 			// Search conversions in Database
 			result, err = app.state.SearchConversions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
 			if err != nil && err != mgo.ErrNotFound {
@@ -315,7 +359,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
-			log.Printf("Got conversions: %+s", result)
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}

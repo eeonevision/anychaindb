@@ -23,7 +23,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/leadschain/leadschain/crypto"
 	"github.com/leadschain/leadschain/state"
@@ -36,7 +35,6 @@ func checkAccountAddTransaction(tx *transaction.Transaction, s *state.State) err
 	if err != nil {
 		return err
 	}
-	fmt.Println("Account is: ", data)
 	if s.HasAccount(data.ID) {
 		return errors.New("Account exists")
 	}

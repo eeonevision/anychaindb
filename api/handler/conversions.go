@@ -94,7 +94,7 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 	writeResult(http.StatusAccepted, "Conversion added", id, w)
 }
 
-// GetConversionsHandler uses FastAPI for search and list conversions.
+// GetConversionsHandler uses BaseAPI for search and list conversions.
 // Query parameters: Query, Limit, Offset can be optional.
 // Query - MongoDB query string.
 // Limit - maximum 500 items.
@@ -153,7 +153,7 @@ func GetConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.
 	return
 }
 
-// GetConversionDetailsHandler uses FastAPI for get conversion details by it id.
+// GetConversionDetailsHandler uses BaseAPI for get conversion details by it id.
 // Query parameters ID is required.
 func GetConversionDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

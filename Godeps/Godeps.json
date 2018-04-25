@@ -252,8 +252,8 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/go-amino",
-			"Comment": "0.9.6",
-			"Rev": "42246108ff925a457fb709475070a03dfd3e2b5c"
+			"Comment": "0.9.6-2-ge17a517",
+			"Rev": "e17a517177f14c7264661c6d9e4bfadd62fee989"
 		},
 		{
 			"ImportPath": "github.com/tendermint/go-crypto",
@@ -402,6 +402,11 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tmlibs/autofile",
+			"Comment": "0.8.1-8-g357648b",
+			"Rev": "357648b8d63732df77fb1dd0f5ad813800912854"
+		},
+		{
+			"ImportPath": "github.com/tendermint/tmlibs/cli/flags",
 			"Comment": "0.8.1-8-g357648b",
 			"Rev": "357648b8d63732df77fb1dd0f5ad813800912854"
 		},

@@ -2,7 +2,8 @@
 
 type=""
 export NODE_IP="$(ip route get 8.8.8.8 | awk '{print $NF; exit}')"
-export CONFIG_PATH="~/leadschain/config"
+export DATA_ROOT="$HOME/leadschain"
+export CONFIG_PATH="$DATA_ROOT/config"
 export DB_PORT=27017
 export P2P_PORT=46656
 export GRPC_PORT=46657
@@ -23,6 +24,10 @@ case $i in
     ;;
     --config=*)
         export CONFIG_PATH="${i#*=}"
+        shift
+    ;;
+    --data=*)
+        export DATA_ROOT="${i#*=}"
         shift
     ;;
     --db_port=*)
@@ -56,13 +61,15 @@ case $i in
 esac
 done
 
-#create leadschain-compose folder
-rm -r -f ~/leadschain/deploy
-mkdir -p ~/leadschain/deploy
+# Prepare directories
+rm -r -f $DATA_ROOT && \
+mkdir -p $DATA_ROOT/config && \
+mkdir -p $DATA_ROOT/deploy && \
+mkdir -p $DATA_ROOT/mongo && \
+cp -a $CONFIG_PATH/. $DATA_ROOT/config/ && \
+cd $DATA_ROOT/deploy
 
-#move to leadschain-compose folder
-cd ~/leadschain/deploy
-
+# Set type
 if [ "$type" = "validator-dev" ]; then
     echo "Installing Leadschain Validator node [DEVELOP]"
     curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-validator-develop.yaml && \
@@ -80,14 +87,9 @@ elif [ "$type" = "node" ]; then
     curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-node.yaml && \
     docker-compose -f leadschain-node.yaml up
 elif [ "$type" = "clean" ]; then
-    echo "Prune docker images"
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-validator-develop.yaml && \
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-node-develop.yaml && \
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-validator.yaml && \
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-node.yaml && \
-    docker-compose -f leadschain-validator-develop.yaml down -v --rmi all --remove-orphans && \
-    docker-compose -f leadschain-node-develop.yaml down -v --rmi all --remove-orphans && \
-    docker-compose -f leadschain-validator.yaml down -v --rmi all --remove-orphans && \
-    docker-compose -f leadschain-node.yaml down -v --rmi all --remove-orphans && \
+    echo "Removing Leadschain images"
+    docker stop $(docker ps | grep "leadschain-" | awk '/ / { print $1 }')
+    docker rm $(docker ps -a | grep "leadschain-" | awk '/ / { print $1 }')
+    docker volume rm $(docker volume ls -qf dangling=true)
     docker system prune -f
 fi

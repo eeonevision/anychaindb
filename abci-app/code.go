@@ -21,6 +21,7 @@
 
 package app
 
+// Leadschain response codes
 const (
 	CodeTypeOK                uint32 = 0
 	CodeTypeEncodingError     uint32 = 1

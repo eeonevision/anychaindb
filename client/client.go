@@ -41,6 +41,7 @@ type AccountAPI interface {
 	CreateAccount() (id, pub, priv string, err error)
 	GetAccount(id string) (*state.Account, error)
 	ListAccounts() ([]state.Account, error)
+	SearchAccounts(query []byte) ([]state.Account, error)
 }
 
 // TransitionAPI interface provides all transition related methods
@@ -91,6 +92,10 @@ func (api *apiClient) GetAccount(id string) (*state.Account, error) {
 
 func (api *apiClient) ListAccounts() ([]state.Account, error) {
 	return api.base.ListAccounts()
+}
+
+func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
+	return api.base.SearchAccounts(query)
 }
 
 func (api *apiClient) AddTransition(affiliateID, advertiserID, clickID, streamID, offerID string, expiresIn int64) (ID string, err error) {

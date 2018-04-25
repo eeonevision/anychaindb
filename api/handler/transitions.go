@@ -88,7 +88,7 @@ func PostTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 	writeResult(http.StatusAccepted, "Transition added", id, w)
 }
 
-// GetTransitionsHandler uses FastAPI for search and list transitions.
+// GetTransitionsHandler uses BaseAPI for search and list transitions.
 // Query parameters: Query, Limit, Offset can be optional.
 // Query - MongoDB query string.
 // Limit - maximum 500 items.
@@ -147,7 +147,7 @@ func GetTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.
 	return
 }
 
-// GetTransitionDetailsHandler uses FastAPI for get transition details by it id.
+// GetTransitionDetailsHandler uses BaseAPI for get transition details by it id.
 // Query parameters ID is required.
 func GetTransitionDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

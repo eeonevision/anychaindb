@@ -23,10 +23,11 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 
 	lapi "github.com/leadschain/leadschain/api"
+	tmflags "github.com/tendermint/tmlibs/cli/flags"
+	"github.com/tendermint/tmlibs/log"
 )
 
 func main() {
@@ -34,14 +35,19 @@ func main() {
 	endpointPtr := flag.String("endpoint", "http://0.0.0.0:46657", "Validator grpc endpoint address")
 	ipPtr := flag.String("ip", "localhost", "Listen host ip")
 	portPtr := flag.String("port", "8888", "Listen host port")
+	logLevel := flag.String("loglevel", "*:info", "log level for leadschain api module: rest-api:info")
 	flag.Parse()
 
 	// Create server
 	api := lapi.NewHTTPServer(*endpointPtr, *ipPtr, *portPtr)
 
 	// Define logger
-	logger := log.New(os.Stdout, "server> ", log.Ltime|log.Lshortfile)
-	api.SetLogger(logger)
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger, err := tmflags.ParseLogLevel(*logLevel, logger, "info")
+	if err != nil {
+		panic(err)
+	}
+	api.SetLogger(logger.With("module", "rest-api"))
 
 	// Start listener
 	api.Serve()
