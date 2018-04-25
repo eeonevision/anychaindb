@@ -74,3 +74,7 @@ func (s *State) GetAccountPubKey(id string) (*crypto.Key, error) {
 func (s *State) ListAccounts() (result []*Account, err error) {
 	return result, s.DB.C(accountsCollection).Find(nil).All(&result)
 }
+
+func (s *State) SearchAccounts(query interface{}, limit, offset int) (result []*Account, err error) {
+	return result, s.DB.C(accountsCollection).Find(query).Skip(offset).Limit(limit).All(&result)
+}

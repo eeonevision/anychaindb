@@ -22,7 +22,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/leadschain/leadschain/client"
@@ -59,4 +61,89 @@ func PostAccountsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 			Priv: priv,
 			Pub:  pub,
 		}, w)
+}
+
+// GetAccountsHandler uses BaseAPI for search and list accounts.
+// Query parameters: Query, Limit, Offset can be optional.
+// Query - MongoDB query string.
+// Limit - maximum 500 items.
+// Offset - default 0.
+func GetAccountsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	var query *string
+	var limit int
+	var offset int
+	var err error
+
+	if q := r.URL.Query().Get("query"); q != "" {
+		query = &q
+	}
+	if l := r.URL.Query().Get("limit"); l != "" {
+		limit, err = strconv.Atoi(l)
+		if err != nil {
+			writeResult(http.StatusBadRequest,
+				"Cannot parse limit parameter: "+err.Error(), nil, w)
+			return
+		}
+	}
+	if o := r.URL.Query().Get("offset"); o != "" {
+		offset, err = strconv.Atoi(o)
+		if err != nil {
+			writeResult(http.StatusBadRequest,
+				"Cannot parse offset parameter: "+err.Error(), nil, w)
+			return
+		}
+	}
+	if limit > 500 || limit <= 0 {
+		limit = 500
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	api := client.NewAPI(endpoint, nil, "")
+	searchReq := mongoQuery{
+		Query:  query,
+		Limit:  limit,
+		Offset: offset,
+	}
+	searchReqStr, _ := json.Marshal(searchReq)
+	acc, err := api.SearchAccounts(searchReqStr)
+	if err != nil {
+		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+	// Empty accounts list
+	if acc == nil {
+		writeResult(http.StatusNotFound, "Empty list", nil, w)
+		return
+	}
+	writeResult(http.StatusOK, "OK", acc, w)
+	return
+}
+
+// GetAccountDetailsHandler uses BaseAPI for get conversion details by it id.
+// Query parameters ID is required.
+func GetAccountDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	id := ps.ByName("id")
+	if id == "" {
+		writeResult(http.StatusBadRequest,
+			"ID should not be empty", nil, w)
+		return
+	}
+	api := client.NewAPI(endpoint, nil, "")
+	acc, err := api.GetAccount(id)
+	if err != nil {
+		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+	// Account not found
+	if acc == nil {
+		writeResult(http.StatusNotFound, "Not Found", nil, w)
+		return
+	}
+	writeResult(http.StatusOK, "OK", acc, w)
+	return
 }

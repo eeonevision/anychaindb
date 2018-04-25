@@ -52,6 +52,8 @@ func NewHTTPServer(GRPCEndpoint, listenIP, httpPort string) *server {
 
 	m := httprouter.New()
 	// Accounts
+	m.GET("/v1/accounts", handler.GetAccountsHandler)
+	m.GET("/v1/accounts/:id", handler.GetAccountDetailsHandler)
 	m.POST("/v1/accounts", handler.PostAccountsHandler)
 	// Transitions
 	m.GET("/v1/transitions", handler.GetTransitionsHandler)

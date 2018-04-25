@@ -32,11 +32,19 @@ import (
 	"github.com/tendermint/abci/types"
 )
 
+// Limit response elements count
+const (
+	resLimit  = 500
+	resOffset = 0
+)
+
+// Application inherits BaseApplication and keeps state of leadschain
 type Application struct {
 	types.BaseApplication
 	state *state.State
 }
 
+// NewApplication method initializes new application with MongoDB state
 func NewApplication(dbHost, dbName string) *Application {
 	db, err := mgo.Dial(dbHost)
 	if err != nil {
@@ -72,16 +80,6 @@ func (app *Application) DeliverTx(txBytes []byte) types.ResponseDeliverTx {
 	case transaction.AccountAdd:
 		{
 			if err := deliverAccountAddTransaction(tx, app.state); err != nil {
-				return types.ResponseDeliverTx{
-					Code: CodeTypeDeliverTxError,
-					Log:  err.Error(),
-				}
-			}
-		}
-
-	case transaction.AccountDel:
-		{
-			if err := deliverAccountDelTransaction(tx, app.state); err != nil {
 				return types.ResponseDeliverTx{
 					Code: CodeTypeDeliverTxError,
 					Log:  err.Error(),
@@ -132,15 +130,6 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx {
 	case transaction.AccountAdd:
 		{
 			if err := checkAccountAddTransaction(tx, app.state); err != nil {
-				return types.ResponseCheckTx{
-					Code: CodeTypeCheckTxError,
-					Log:  err.Error(),
-				}
-			}
-		}
-	case transaction.AccountDel:
-		{
-			if err := checkAccountDelTransaction(tx, app.state); err != nil {
 				return types.ResponseCheckTx{
 					Code: CodeTypeCheckTxError,
 					Log:  err.Error(),
@@ -225,6 +214,42 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}
+	case "accounts/search":
+		{
+			var (
+				result interface{}
+				err    error
+			)
+			if reqQuery.Data == nil {
+				resQuery.Code = CodeEmptySearchQuery
+				resQuery.Log = "Search query is empty"
+				return
+			}
+			// Unmarshal search query
+			var mgoQuery MongoQuery
+			if err = json.Unmarshal(reqQuery.Data, &mgoQuery); err != nil {
+				resQuery.Code = CodeParseSearchQueryError
+				resQuery.Log = err.Error()
+				return
+			}
+			// Check limit and offset values
+			if mgoQuery.Limit > resLimit || resOffset <= 0 {
+				mgoQuery.Limit = resLimit
+			}
+			if mgoQuery.Offset < resOffset {
+				mgoQuery.Offset = resOffset
+			}
+			// Search accounts in Database
+			result, err = app.state.SearchAccounts(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
+			if err != nil && err != mgo.ErrNotFound {
+				resQuery.Code = CodeParseSearchQueryError
+				resQuery.Log = err.Error()
+				return
+			}
+			log.Printf("Got accounts: %+s", result)
+			bs, _ := json.Marshal(result)
+			resQuery.Value = bs
+		}
 	case "transitions":
 		{
 			var (
@@ -260,6 +285,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return
+			}
+			// Check limit and offset values
+			if mgoQuery.Limit > resLimit || resOffset <= 0 {
+				mgoQuery.Limit = resLimit
+			}
+			if mgoQuery.Offset < resOffset {
+				mgoQuery.Offset = resOffset
 			}
 			// Search transitions in Database
 			result, err = app.state.SearchTransitions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
@@ -307,6 +339,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return
+			}
+			// Check limit and offset values
+			if mgoQuery.Limit > resLimit || resOffset <= 0 {
+				mgoQuery.Limit = resLimit
+			}
+			if mgoQuery.Offset < resOffset {
+				mgoQuery.Offset = resOffset
 			}
 			// Search conversions in Database
 			result, err = app.state.SearchConversions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)

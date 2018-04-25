@@ -86,6 +86,19 @@ func (c *BaseClient) ListAccounts() ([]state.Account, error) {
 	return acc, nil
 }
 
+func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error) {
+	resp, err := c.tm.ABCIQuery("accounts/search", searchQuery)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	acc := []state.Account{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
+		return nil, err
+	}
+	return acc, nil
+}
+
 func (c *BaseClient) AddTransition(tr *state.Transition) error {
 	txBytes, err := tr.MarshalMsg(nil)
 	if err != nil {
