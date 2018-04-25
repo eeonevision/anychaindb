@@ -26,6 +26,11 @@ services:
   leadschain-mongodb:
     image: mongo:latest
     container_name: leadschain-mongodb
+    deploy:
+      restart_policy:
+        condition: any
+        max_attempts: 3
+        window: 10s
     logging:
       driver: "json-file"
       options:
@@ -48,6 +53,11 @@ services:
       context: .
       dockerfile: dockerfiles/develop/leadschain-abci-develop.Dockerfile
     container_name: leadschain-abci-develop
+    deploy:
+      restart_policy:
+        condition: any
+        max_attempts: 3
+        window: 10s
     logging:
       driver: "json-file"
       options:
@@ -68,6 +78,11 @@ services:
       context: .
       dockerfile: dockerfiles/develop/leadschain-node-develop.Dockerfile
     container_name: leadschain-node-develop
+    deploy:
+      restart_policy:
+        condition: any
+        max_attempts: 3
+        window: 30s
     logging:
       driver: "json-file"
       options:
@@ -97,6 +112,11 @@ services:
       context: .
       dockerfile: dockerfiles/develop/leadschain-rest-api-develop.Dockerfile
     container_name: leadschain-rest-api-develop
+    deploy:
+      restart_policy:
+        condition: any
+        max_attempts: 3
+        window: 10s
     logging:
       driver: "json-file"
       options:
