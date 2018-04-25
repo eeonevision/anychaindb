@@ -73,6 +73,9 @@ Parameters:
 * api_port - port for Leadschain REST API. *Default: 8889*
 * node_args - additional arguments for node. If you connect to existing network, you maybe need to set boot nodes addresses, like: `--node_args="--p2p.persistent_peers=id@host:port"`
 
+By default script creates *leadschain* directory in home folder of user, where keeps all data from state. Do not remove it.
+You may change it by setting another value in ${DATA_ROOT} script variable.
+
 ## Additional docs
   * [Leadschain REST API] - REST API for Leadschain client
   * [Tendermint Docs] - Tendermint documentation
