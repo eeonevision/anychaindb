@@ -26,11 +26,6 @@ services:
   leadschain-mongodb:
     image: mongo:latest
     container_name: leadschain-mongodb
-    deploy:
-      restart_policy:
-        condition: any
-        max_attempts: 3
-        window: 10s
     logging:
       driver: "json-file"
       options:
@@ -50,11 +45,6 @@ services:
   leadschain-abci:
     image: leadschain/abci:latest
     container_name: leadschain-abci
-    deploy:
-      restart_policy:
-        condition: any
-        max_attempts: 3
-        window: 10s
     logging:
       driver: "json-file"
       options:
@@ -72,11 +62,6 @@ services:
   leadschain-node:
     image: leadschain/node:latest
     container_name: leadschain-node
-    deploy:
-      restart_policy:
-        condition: any
-        max_attempts: 3
-        window: 30s
     logging:
       driver: "json-file"
       options:
@@ -103,11 +88,6 @@ services:
   leadschain-rest-api:
     image: leadschain/api:latest
     container_name: leadschain-rest-api
-    deploy:
-      restart_policy:
-        condition: any
-        max_attempts: 3
-        window: 10s
     logging:
       driver: "json-file"
       options:
