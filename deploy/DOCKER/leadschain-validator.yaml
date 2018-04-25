@@ -36,6 +36,10 @@ services:
         ipv4_address: 172.16.238.02
     expose:
       - ${DB_PORT}
+    volumes:
+      - type: bind
+        source: ${DATA_ROOT}/mongo
+        target: /data/db
     entrypoint: mongod --bind_ip_all --quiet
 
   leadschain-abci:
@@ -71,7 +75,9 @@ services:
       - ${P2P_PORT}:${P2P_PORT}
       - ${GRPC_PORT}:${GRPC_PORT}
     volumes:
-      - ${CONFIG_PATH}:/tendermint/config
+      - type: bind
+        source: ${DATA_ROOT}
+        target: /tendermint
     depends_on:
       - leadschain-abci
     entrypoint: "sh -c \"\
