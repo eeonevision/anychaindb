@@ -22,9 +22,7 @@
 package app
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"github.com/tendermint/tmlibs/log"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -36,24 +34,25 @@ type PersistentApplication struct {
 	app         *Application
 	blockHeader types.Header
 	changes     []types.Validator
-	logger      *log.Logger
 }
 
+// NewPersistentApplication method construct application with persistent state
 func NewPersistentApplication(dbHost, dbName string) *PersistentApplication {
 	stateDB, err := mgo.Dial(dbHost)
 	if err != nil {
 		panic("Error initialize Mongo DB: " + err.Error())
 	}
 	return &PersistentApplication{
-		app:    &Application{state: state.NewStateFromDB(stateDB.DB(dbName))},
-		logger: log.New(os.Stderr, "", log.LstdFlags),
+		app: &Application{state: state.NewStateFromDB(stateDB.DB(dbName))},
 	}
 }
 
-func (app *PersistentApplication) SetLogger(l *log.Logger) {
-	app.logger = l
+// SetLogger method sets application logger
+func (app *PersistentApplication) SetLogger(l log.Logger) {
+	app.app.SetLogger(l)
 }
 
+// Info method returns application info with last block height and hash
 func (app *PersistentApplication) Info(req types.RequestInfo) (resInfo types.ResponseInfo) {
 	resInfo = app.app.Info()
 	lastBlock := app.LoadLastBlock()
@@ -62,18 +61,22 @@ func (app *PersistentApplication) Info(req types.RequestInfo) (resInfo types.Res
 	return resInfo
 }
 
+// SetOption method sets application option
 func (app *PersistentApplication) SetOption(reqSetOpt types.RequestSetOption) types.ResponseSetOption {
 	return app.app.SetOption(reqSetOpt)
 }
 
+// DeliverTx method delivers a transaction to state
 func (app *PersistentApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	return app.app.DeliverTx(tx)
 }
 
+// CheckTx method validates a transaction in mempool
 func (app *PersistentApplication) CheckTx(tx []byte) types.ResponseCheckTx {
 	return app.app.CheckTx(tx)
 }
 
+// Commit method commits the state and returns the application state hash
 func (app *PersistentApplication) Commit() types.ResponseCommit {
 	appCommit := app.app.Commit()
 
@@ -86,10 +89,12 @@ func (app *PersistentApplication) Commit() types.ResponseCommit {
 	return appCommit
 }
 
+// Query method invokes for state
 func (app *PersistentApplication) Query(reqQuery types.RequestQuery) types.ResponseQuery {
 	return app.app.Query(reqQuery)
 }
 
+// InitChain method initializes Leadschain
 func (app *PersistentApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	return types.ResponseInitChain{}
 }
@@ -117,9 +122,10 @@ type LastBlockInfo struct {
 // LoadLastBlock method load last confirmed block from DB
 func (app *PersistentApplication) LoadLastBlock() (lastBlock LastBlockInfo) {
 	if err := app.app.state.DB.C("blocks").Find(nil).One(&lastBlock); err != mgo.ErrNotFound && err != nil {
-		panic(err)
+		app.app.logger.Error("Block loading error", "error", err.Error())
+		return
 	}
-	fmt.Println("Last block is: ", string(lastBlock.AppHash))
+	app.app.logger.Info("Loaded block", "hash", string(lastBlock.AppHash))
 	return lastBlock
 }
 
@@ -130,7 +136,8 @@ func (app *PersistentApplication) SaveLastBlock(lastBlock LastBlockInfo) {
 	updator := bson.M{"$set": bson.M{"height": lastBlock.Height, "app_hash": lastBlock.AppHash}}
 	_, err := app.app.state.DB.C("blocks").Upsert(selector, updator)
 	if err != nil {
-		panic(err)
+		app.app.logger.Error("Block saving error", "error", err.Error())
+		return
 	}
-	fmt.Printf("Saved block %v with height %s", lastBlock.Height, string(lastBlock.AppHash))
+	app.app.logger.Info("Saved block", "height", lastBlock.Height, "hash", string(lastBlock.AppHash))
 }

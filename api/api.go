@@ -23,11 +23,12 @@ package api
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/tendermint/tmlibs/log"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -37,7 +38,7 @@ import (
 type server struct {
 	ListenHost string
 	ListenPort string
-	Logger     *log.Logger
+	Logger     log.Logger
 }
 
 // NewHTTPServer method constructs new server object and handlers
@@ -47,7 +48,7 @@ func NewHTTPServer(GRPCEndpoint, listenIP, httpPort string) *server {
 	res := server{
 		ListenHost: listenIP,
 		ListenPort: httpPort,
-		Logger:     log.New(os.Stderr, "", log.LstdFlags),
+		Logger:     log.NewNopLogger(),
 	}
 
 	m := httprouter.New()
@@ -69,7 +70,7 @@ func NewHTTPServer(GRPCEndpoint, listenIP, httpPort string) *server {
 	return &res
 }
 
-func (s *server) SetLogger(l *log.Logger) {
+func (s *server) SetLogger(l log.Logger) {
 	s.Logger = l
 }
 
@@ -88,20 +89,21 @@ func (s *server) Serve() {
 	}
 
 	go func() {
-		s.Logger.Printf("Listening on http://%s:%s\n", s.ListenHost, s.ListenPort)
+		s.Logger.Info("Starting REST-API server...", "host", s.ListenHost, "port", s.ListenPort)
 		// service connections
 		if err := srv.ListenAndServe(); err != nil {
-			s.Logger.Fatal(err)
+			s.Logger.Error("Starting error", "error", err.Error())
+			os.Exit(1)
 		}
 	}()
 
 	<-stopChan // wait for SIGINT
-	log.Println("Shutting down server...")
+	s.Logger.Info("Shutting down server...")
 
 	// shut down gracefully, but wait no longer than 5 seconds before halting
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	srv.Shutdown(ctx)
 	defer cancel()
 
-	log.Println("Server gracefully stopped")
+	s.Logger.Info("Server gracefully stopped")
 }

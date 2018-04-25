@@ -23,7 +23,8 @@ package app
 
 import (
 	"encoding/json"
-	"log"
+
+	"github.com/tendermint/tmlibs/log"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -41,7 +42,8 @@ const (
 // Application inherits BaseApplication and keeps state of leadschain
 type Application struct {
 	types.BaseApplication
-	state *state.State
+	state  *state.State
+	logger log.Logger
 }
 
 // NewApplication method initializes new application with MongoDB state
@@ -53,16 +55,23 @@ func NewApplication(dbHost, dbName string) *Application {
 	return &Application{state: state.NewStateFromDB(db.DB(dbName))}
 }
 
+// SetLogger method set logger for Application
+func (app *Application) SetLogger(l log.Logger) {
+	app.logger = l
+}
+
 // Info method returns information about current state.
 // All sizes represented in kilobytes.
 func (app *Application) Info() (resInfo types.ResponseInfo) {
 	var stats map[string]interface{}
-	if err := app.state.DB.Run(bson.M{"dbStats": 1, "scale": 1024}, &stats); err != nil {
-		return types.ResponseInfo{Data: err.Error()}
+	if err := app.state.DB.Run(bson.M{"dbStats": 1}, &stats); err != nil {
+		app.logger.Error("Getting state info error", "error", err.Error())
+		return
 	}
 	res, err := json.Marshal(stats)
 	if err != nil {
-		return types.ResponseInfo{Data: err.Error()}
+		app.logger.Error("Encoding state info error", "error", err.Error())
+		return
 	}
 	return types.ResponseInfo{Data: string(res)}
 }
@@ -204,7 +213,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			if reqQuery.Data != nil {
 				id := string(reqQuery.Data)
 				result, err = app.state.GetAccount(id)
-				log.Printf("Got account: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
@@ -246,7 +254,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
-			log.Printf("Got accounts: %+s", result)
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}
@@ -258,7 +265,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			)
 			if reqQuery.Data != nil {
 				result, err = app.state.GetTransition(string(reqQuery.Data))
-				log.Printf("Got transition: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
@@ -300,7 +306,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
-			log.Printf("Got transitions: %+s", result)
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}
@@ -312,7 +317,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			)
 			if reqQuery.Data != nil {
 				result, err = app.state.GetConversion(string(reqQuery.Data))
-				log.Printf("Got conversion: %+v", result)
+				app.logger.Debug("Got conversion: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
@@ -354,7 +359,6 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				resQuery.Log = err.Error()
 				return
 			}
-			log.Printf("Got conversions: %+s", result)
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}

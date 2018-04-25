@@ -24,7 +24,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/leadschain/leadschain/crypto"
 	"github.com/leadschain/leadschain/state"
@@ -76,7 +75,6 @@ func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
 func (c *BaseClient) ListAccounts() ([]state.Account, error) {
 	resp, err := c.tm.ABCIQuery("accounts", nil)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	acc := []state.Account{}
@@ -89,7 +87,6 @@ func (c *BaseClient) ListAccounts() ([]state.Account, error) {
 func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error) {
 	resp, err := c.tm.ABCIQuery("accounts/search", searchQuery)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	acc := []state.Account{}
@@ -134,7 +131,6 @@ func (c *BaseClient) GetTransition(id string) (*state.Transition, error) {
 func (c *BaseClient) ListTransitions() ([]state.Transition, error) {
 	resp, err := c.tm.ABCIQuery("transitions", nil)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	tr := []state.Transition{}
@@ -147,7 +143,6 @@ func (c *BaseClient) ListTransitions() ([]state.Transition, error) {
 func (c *BaseClient) SearchTransitions(searchQuery []byte) ([]state.Transition, error) {
 	resp, err := c.tm.ABCIQuery("transitions/search", searchQuery)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	tr := []state.Transition{}
@@ -193,7 +188,6 @@ func (c *BaseClient) GetConversion(id string) (*state.Conversion, error) {
 func (c *BaseClient) ListConversions() ([]state.Conversion, error) {
 	resp, err := c.tm.ABCIQuery("conversions", nil)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	cv := []state.Conversion{}
@@ -206,7 +200,6 @@ func (c *BaseClient) ListConversions() ([]state.Conversion, error) {
 func (c *BaseClient) SearchConversions(searchQuery []byte) ([]state.Conversion, error) {
 	resp, err := c.tm.ABCIQuery("conversions/search", searchQuery)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	cv := []state.Conversion{}

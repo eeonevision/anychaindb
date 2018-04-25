@@ -25,10 +25,12 @@ import (
 	"flag"
 	"os"
 
+	tmflags "github.com/tendermint/tmlibs/cli/flags"
+	"github.com/tendermint/tmlibs/log"
+
 	labci "github.com/leadschain/leadschain/abci-app"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/common"
-	"github.com/tendermint/tmlibs/log"
 )
 
 func main() {
@@ -36,12 +38,18 @@ func main() {
 	addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
 	abciPtr := flag.String("abci", "socket", "socket | grpc")
 	dbHost := flag.String("dbhost", "localhost", "database host path")
-	dbName := flag.String("dbName", "leadschain", "database name")
+	dbName := flag.String("dbname", "leadschain", "database name")
+	logLevel := flag.String("loglevel", "*:error", "log level for abci modules: abci-app:error,abci-server:info,*:error")
 	flag.Parse()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger, err := tmflags.ParseLogLevel(*logLevel, logger, "info")
+	if err != nil {
+		panic(err)
+	}
 
 	app := labci.NewPersistentApplication(*dbHost, *dbName)
+	app.SetLogger(logger.With("module", "abci-app"))
 
 	// Start the listener
 	srv, err := server.NewServer(*addrPtr, *abciPtr, app)
