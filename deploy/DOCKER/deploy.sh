@@ -61,35 +61,49 @@ case $i in
 esac
 done
 
-# Prepare directories
-rm -r -f $DATA_ROOT && \
-mkdir -p $DATA_ROOT/config && \
-mkdir -p $DATA_ROOT/deploy && \
-mkdir -p $DATA_ROOT/mongo && \
-cp -a $CONFIG_PATH/. $DATA_ROOT/config/ && \
-cd $DATA_ROOT/deploy
+prepare () {
+    # Prepare directories
+    rm -r -f $DATA_ROOT && \
+    mkdir -p $DATA_ROOT/config && \
+    mkdir -p $DATA_ROOT/deploy && \
+    mkdir -p $DATA_ROOT/mongo && \
+    cp -a $CONFIG_PATH/. $DATA_ROOT/config/ && \
+    cd $DATA_ROOT/deploy
+}
 
-# Set type
-if [ "$type" = "validator-dev" ]; then
-    echo "Installing Leadschain Validator node [DEVELOP]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-validator-develop.yaml && \
-    docker-compose -f leadschain-validator-develop.yaml up
-elif [ "$type" = "node-dev" ]; then
-    echo "Installing Leadschain Non-Validator node [DEVELOP]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-node-develop.yaml && \
-    docker-compose -f leadschain-node-develop.yaml up
-elif [ "$type" = "validator" ]; then
-    echo "Installing Leadschain Validator node [RELEASE]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-validator.yaml && \
-    docker-compose -f leadschain-validator.yaml up
-elif [ "$type" = "node" ]; then
-    echo "Installing Leadschain Non-Validator node [RELEASE]"
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-node.yaml && \
-    docker-compose -f leadschain-node.yaml up
-elif [ "$type" = "clean" ]; then
+clean () {
     echo "Removing Leadschain images"
     docker stop $(docker ps | grep "leadschain-" | awk '/ / { print $1 }')
     docker rm $(docker ps -a | grep "leadschain-" | awk '/ / { print $1 }')
     docker volume rm $(docker volume ls -qf dangling=true)
     docker system prune -f
+}
+
+# Set type
+if [ "$type" = "validator-dev" ]; then
+    prepare
+    clean
+    echo "Installing Leadschain Validator node [DEVELOP]"
+    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-validator-develop.yaml && \
+    docker-compose -f leadschain-validator-develop.yaml up
+elif [ "$type" = "node-dev" ]; then
+    prepare
+    clean
+    echo "Installing Leadschain Non-Validator node [DEVELOP]"
+    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-node-develop.yaml && \
+    docker-compose -f leadschain-node-develop.yaml up
+elif [ "$type" = "validator" ]; then
+    prepare
+    clean
+    echo "Installing Leadschain Validator node [RELEASE]"
+    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-validator.yaml && \
+    docker-compose -f leadschain-validator.yaml up
+elif [ "$type" = "node" ]; then
+    prepare
+    clean
+    echo "Installing Leadschain Non-Validator node [RELEASE]"
+    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain-node.yaml && \
+    docker-compose -f leadschain-node.yaml up
+elif [ "$type" = "clean" ]; then
+    clean
 fi
