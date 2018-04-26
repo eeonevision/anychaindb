@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# default values for environment variables
 type=""
 export NODE_IP="$(ip route get 8.8.8.8 | awk '{print $NF; exit}')"
 export DATA_ROOT="$HOME/leadschain"
@@ -11,6 +12,7 @@ export ABCI_PORT=46658
 export REST_PORT=8889
 export NODE_ARGS=""
 
+# set environment variables
 for i in "$@"
 do
 case $i in
@@ -61,8 +63,8 @@ case $i in
 esac
 done
 
+# prepare method erases data root directory
 prepare () {
-    # Prepare directories
     rm -r -f $DATA_ROOT && \
     mkdir -p $DATA_ROOT/config && \
     mkdir -p $DATA_ROOT/deploy && \
@@ -71,6 +73,8 @@ prepare () {
     cd $DATA_ROOT/deploy
 }
 
+# clean method removes leadschain docker containers and prunes volumes/networks, 
+# that was used by leadschain
 clean () {
     echo "Removing Leadschain images"
     docker stop $(docker ps | grep "leadschain-" | awk '/ / { print $1 }')
@@ -79,7 +83,7 @@ clean () {
     docker system prune -f
 }
 
-# Set type
+# check conditions
 if [ "$type" = "validator-dev" ]; then
     prepare
     clean
