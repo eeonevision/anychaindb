@@ -59,9 +59,9 @@ services:
       - leadschain-mongodb
     entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:error
     
-  leadschain-validator:
+  leadschain-node:
     image: leadschain/node:latest
-    container_name: leadschain-validator
+    container_name: leadschain-node
     logging:
       driver: "json-file"
       options:
