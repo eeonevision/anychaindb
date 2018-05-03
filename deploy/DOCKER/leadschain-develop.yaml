@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-version: "3.3"
+version: "3.5"
 
 services:
 
@@ -41,10 +41,13 @@ services:
         source: ${DATA_ROOT}/mongo
         target: /data/db
     entrypoint: mongod --bind_ip_all --quiet
-
-  leadschain-abci:
-    image: leadschain/abci:latest
-    container_name: leadschain-abci
+    
+  leadschain-abci-develop:
+    image: leadschain/abci:develop
+    build:
+      context: .
+      dockerfile: dockerfiles/develop/leadschain-abci-develop.Dockerfile
+    container_name: leadschain-abci-develop
     logging:
       driver: "json-file"
       options:
@@ -55,13 +58,18 @@ services:
         ipv4_address: 172.16.238.03
     expose:
       - ${ABCI_PORT}
+    ports:
+      - ${ABCI_PORT}:${ABCI_PORT}
     depends_on:
       - leadschain-mongodb
     entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:error
 
-  leadschain-node:
-    image: leadschain/node:latest
-    container_name: leadschain-node
+  leadschain-node-develop:
+    image: leadschain/node:develop
+    build:
+      context: .
+      dockerfile: dockerfiles/develop/leadschain-node-develop.Dockerfile
+    container_name: leadschain-node-develop
     logging:
       driver: "json-file"
       options:
@@ -79,15 +87,18 @@ services:
         source: ${DATA_ROOT}
         target: /tendermint
     depends_on:
-      - leadschain-abci
+      - leadschain-abci-develop
     entrypoint: "sh -c \"\
       tendermint init && \
       tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
       \""
 
-  leadschain-rest-api:
-    image: leadschain/api:latest
-    container_name: leadschain-rest-api
+  leadschain-rest-api-develop:
+    image: leadschain/api:develop
+    build:
+      context: .
+      dockerfile: dockerfiles/develop/leadschain-rest-api-develop.Dockerfile
+    container_name: leadschain-rest-api-develop
     logging:
       driver: "json-file"
       options:
@@ -99,11 +110,12 @@ services:
     ports:
       - ${REST_PORT}:${REST_PORT}
     depends_on:
-      - leadschain-abci
+      - leadschain-abci-develop
     entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error
 
 networks:
   back:
+    # use the bridge driver, but enable IPv6
     driver: bridge
     internal: true
     ipam:
