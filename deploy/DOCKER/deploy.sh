@@ -2,7 +2,7 @@
 
 # default values for environment variables
 type=""
-export NODE_IP="$(ip route get 8.8.8.8 | awk '{print $NF; exit}')"
+export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 export DATA_ROOT="$HOME/leadschain"
 export CONFIG_PATH="$DATA_ROOT/config"
 export DB_PORT=27017
