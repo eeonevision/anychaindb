@@ -80,6 +80,7 @@ clean () {
     docker stop $(docker ps | grep "leadschain-" | awk '/ / { print $1 }')
     docker rm $(docker ps -a | grep "leadschain-" | awk '/ / { print $1 }')
     docker volume rm $(docker volume ls -qf dangling=true)
+    docker image -a -f
     docker system prune -f
 }
 
