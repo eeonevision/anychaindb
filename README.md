@@ -60,11 +60,11 @@ Configure a new network is little more sophisticated. About this we will discuss
 Deploy a network with the shell script:
 
 ```shell
-sh deploy.sh --type=${NODE_TYPE} --node_ip=${NODE_IP} --config=${CONFIG_PATH}
+sh deploy.sh --type=${JOB_TYPE} --node_ip=${NODE_IP} --config=${CONFIG_PATH}
 ```
 Parameters:
-* **type** - *validator* or *node*. Also you can enter *clean* and reset all node data with containers
-* **node_ip** - ip address of node. *Example: 127.0.0.1*
+* **type** - type of job for script. You can choose from *node*, *node-dev*, *update*, *update-dev*, *clean* types
+* **node_ip** - ip address of node. Default script uses `dig` with `OpenDNS` as resolver. *Example: 127.0.0.1*
 * **config** - full path to config folder. *Example: /home/ubuntu/CONFIG_FOLDER*
 * db_port - port for communication with MongoDB container. *Default: 27017*
 * p2p_port - port for communication between nodes. *Default: 46656*
