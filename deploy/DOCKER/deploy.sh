@@ -107,6 +107,6 @@ elif [ "$type" = "update" ]; then
 elif [ "$type" = "update-dev" ]; then
     clean
     echo "[DEVELOP] Starting Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain.yaml && \
+    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
     docker-compose -f leadschain-develop.yaml up
 fi
