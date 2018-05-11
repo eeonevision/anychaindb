@@ -22,10 +22,7 @@
 package state
 
 import (
-	"encoding/base64"
-
 	"github.com/globalsign/mgo"
-	"golang.org/x/crypto/blake2b"
 )
 
 type State struct {
@@ -35,13 +32,4 @@ type State struct {
 // NewStateFromDB method constructs MongoDB state
 func NewStateFromDB(db *mgo.Database) *State {
 	return &State{db}
-}
-
-func (s *State) hash(data string) string {
-	hash, err := blake2b.New256(nil)
-	hash.Write([]byte(data))
-	if err != nil {
-		return ""
-	}
-	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
