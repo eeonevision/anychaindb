@@ -25,11 +25,12 @@ import (
 	"github.com/globalsign/mgo"
 )
 
+// State struct contains pointer to MongoDB instance.
 type State struct {
 	DB *mgo.Database
 }
 
-// NewStateFromDB method constructs MongoDB state
+// NewStateFromDB method constructs MongoDB state.
 func NewStateFromDB(db *mgo.Database) *State {
 	return &State{db}
 }
