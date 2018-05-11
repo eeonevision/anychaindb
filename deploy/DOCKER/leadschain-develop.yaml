@@ -44,9 +44,6 @@ services:
     
   leadschain-abci-develop:
     image: leadschain/abci:develop
-    build:
-      context: .
-      dockerfile: dockerfiles/develop/leadschain-abci-develop.Dockerfile
     container_name: leadschain-abci-develop
     logging:
       driver: "json-file"
@@ -62,13 +59,10 @@ services:
       - ${ABCI_PORT}:${ABCI_PORT}
     depends_on:
       - leadschain-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:error
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:info
 
   leadschain-node-develop:
     image: leadschain/node:develop
-    build:
-      context: .
-      dockerfile: dockerfiles/develop/leadschain-node-develop.Dockerfile
     container_name: leadschain-node-develop
     logging:
       driver: "json-file"
@@ -95,9 +89,6 @@ services:
 
   leadschain-rest-api-develop:
     image: leadschain/api:develop
-    build:
-      context: .
-      dockerfile: dockerfiles/develop/leadschain-rest-api-develop.Dockerfile
     container_name: leadschain-rest-api-develop
     logging:
       driver: "json-file"
@@ -111,7 +102,7 @@ services:
       - ${REST_PORT}:${REST_PORT}
     depends_on:
       - leadschain-abci-develop
-    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error
+    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:info
 
 networks:
   back:
