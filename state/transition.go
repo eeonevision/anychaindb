@@ -27,6 +27,7 @@ import (
 
 //go:generate msgp
 
+// Transition struct keeps transition related fields.
 type Transition struct {
 	ID                  string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
 	AdvertiserAccountID string  `msg:"advertiser_account_id" json:"advertiser_account_id" mapstructure:"advertiser_account_id" bson:"advertiser_account_id"`
@@ -40,6 +41,7 @@ type Transition struct {
 
 const transitionsCollection = "transitions"
 
+// AddTransition method adds new transition to state if it not exists.
 func (s *State) AddTransition(transition *Transition) error {
 	if s.HasTransition(transition.ID) {
 		return errors.New("Transition exists")
@@ -47,12 +49,12 @@ func (s *State) AddTransition(transition *Transition) error {
 	return s.SetTransition(transition)
 }
 
+// SetTransition method inserts new transition in state without any checks.
 func (s *State) SetTransition(transition *Transition) error {
-
-	return s.DB.C(transitionsCollection).Insert(
-		s.encryptTransition(transition))
+	return s.DB.C(transitionsCollection).Insert(transition)
 }
 
+// HasTransition method checks exists conversion in state or not exists.
 func (s *State) HasTransition(id string) bool {
 	if res, _ := s.GetTransition(id); res != nil {
 		return true
@@ -60,29 +62,18 @@ func (s *State) HasTransition(id string) bool {
 	return false
 }
 
+// GetTransition method gets transition from state by given id.
 func (s *State) GetTransition(id string) (*Transition, error) {
 	var result *Transition
 	return result, s.DB.C(transitionsCollection).FindId(id).One(&result)
 }
 
+// ListTransitions method returns list of all transitions from state.
 func (s *State) ListTransitions() (result []*Transition, err error) {
 	return result, s.DB.C(transitionsCollection).Find(nil).All(&result)
 }
 
+// SearchTransitions method finds conversions in state using mongodb query language.
 func (s *State) SearchTransitions(query interface{}, limit, offset int) (result []*Transition, err error) {
 	return result, s.DB.C(transitionsCollection).Find(query).Skip(offset).Limit(limit).All(&result)
-}
-
-func (s *State) encryptTransition(transition *Transition) *Transition {
-	// Encrypt fields with BLAKE2B 256-bit algorithm
-	return &Transition{
-		ID:                  transition.ID,
-		AdvertiserAccountID: transition.AdvertiserAccountID,
-		AffiliateAccountID:  transition.AffiliateAccountID,
-		ClickID:             s.hash(transition.ClickID),
-		OfferID:             s.hash(transition.OfferID),
-		StreamID:            s.hash(transition.StreamID),
-		CreatedAt:           transition.CreatedAt,
-		ExpiresIn:           transition.ExpiresIn,
-	}
 }

@@ -29,6 +29,7 @@ import (
 
 //go:generate msgp
 
+// Account struct keeps account related fields.
 type Account struct {
 	ID     string `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
 	PubKey string `msg:"pubkey" json:"pubkey" mapstructure:"pubkey" bson:"pubkey"`
@@ -36,6 +37,7 @@ type Account struct {
 
 const accountsCollection = "accounts"
 
+// AddAccount method adds new account if all checks were passed.
 func (s *State) AddAccount(account *Account) error {
 	if s.HasAccount(account.ID) {
 		return errors.New("Account exists")
@@ -43,10 +45,12 @@ func (s *State) AddAccount(account *Account) error {
 	return s.SetAccount(account)
 }
 
+// SetAccount method adds account in state.
 func (s *State) SetAccount(account *Account) error {
 	return s.DB.C(accountsCollection).Insert(account)
 }
 
+// HasAccount method checks if account exists in state or not exists.
 func (s *State) HasAccount(id string) bool {
 	if res, _ := s.GetAccount(id); res != nil {
 		return true
@@ -54,15 +58,13 @@ func (s *State) HasAccount(id string) bool {
 	return false
 }
 
+// GetAccount method returns account from accounts collection by given accoutn id.
 func (s *State) GetAccount(id string) (*Account, error) {
 	var result *Account
 	return result, s.DB.C(accountsCollection).FindId(id).One(&result)
 }
 
-func (s *State) DeleteAccount(id string) error {
-	return s.DB.C(accountsCollection).RemoveId(id)
-}
-
+// GetAccountPubKey method returns public key by given account id.
 func (s *State) GetAccountPubKey(id string) (*crypto.Key, error) {
 	acc, err := s.GetAccount(id)
 	if err != nil {
@@ -71,10 +73,12 @@ func (s *State) GetAccountPubKey(id string) (*crypto.Key, error) {
 	return crypto.NewFromStrings(acc.PubKey, "")
 }
 
+// ListAccounts method returns all accounts from the state.
 func (s *State) ListAccounts() (result []*Account, err error) {
 	return result, s.DB.C(accountsCollection).Find(nil).All(&result)
 }
 
+// SearchAccounts method returns accounts by given search query, limit and offset parameters.
 func (s *State) SearchAccounts(query interface{}, limit, offset int) (result []*Account, err error) {
 	return result, s.DB.C(accountsCollection).Find(query).Skip(offset).Limit(limit).All(&result)
 }
