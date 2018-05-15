@@ -27,6 +27,7 @@ import (
 
 //go:generate msgp
 
+// Conversion struct keep conversion related fields.
 type Conversion struct {
 	ID                  string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
 	AdvertiserAccountID string  `msg:"advertiser_account_id" json:"advertiser_account_id" mapstructure:"advertiser_account_id" bson:"advertiser_account_id"`
@@ -43,6 +44,7 @@ type Conversion struct {
 
 const conversionsCollection = "conversions"
 
+// AddConversion method adds new conversion to the state if it not exists.
 func (s *State) AddConversion(conversion *Conversion) error {
 	if s.HasConversion(conversion.ID) {
 		return errors.New("Conversion exists")
@@ -50,10 +52,12 @@ func (s *State) AddConversion(conversion *Conversion) error {
 	return s.SetConversion(conversion)
 }
 
+// SetConversion inserts new conversion to state without any checks.
 func (s *State) SetConversion(conversion *Conversion) error {
 	return s.DB.C(conversionsCollection).Insert(conversion)
 }
 
+// HasConversion method checks exists conversion in state ot not.
 func (s *State) HasConversion(id string) bool {
 	if res, _ := s.GetConversion(id); res != nil {
 		return true
@@ -61,15 +65,18 @@ func (s *State) HasConversion(id string) bool {
 	return false
 }
 
+// GetConversion method gets conversion from state by it identifier.
 func (s *State) GetConversion(id string) (*Conversion, error) {
 	var result *Conversion
 	return result, s.DB.C(conversionsCollection).FindId(id).One(&result)
 }
 
+// ListConversions method returns list of all conversions in state.
 func (s *State) ListConversions() (result []*Conversion, err error) {
 	return result, s.DB.C(conversionsCollection).Find(nil).All(&result)
 }
 
+// SearchConversions method finds conversions using mongodb query language.
 func (s *State) SearchConversions(query interface{}, limit, offset int) (result []*Conversion, err error) {
 	return result, s.DB.C(conversionsCollection).Find(query).Skip(offset).Limit(limit).All(&result)
 }
