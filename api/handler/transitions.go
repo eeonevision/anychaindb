@@ -96,13 +96,18 @@ func PostTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 func GetTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	var query *string
+	var query interface{}
 	var limit int
 	var offset int
 	var err error
 
 	if q := r.URL.Query().Get("query"); q != "" {
-		query = &q
+		err := json.Unmarshal([]byte(q), &query)
+		if err != nil {
+			writeResult(http.StatusBadRequest,
+				"Cannot parse query parameter: "+err.Error(), nil, w)
+			return
+		}
 	}
 	if l := r.URL.Query().Get("limit"); l != "" {
 		limit, err = strconv.Atoi(l)
