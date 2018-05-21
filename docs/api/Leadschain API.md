@@ -64,7 +64,7 @@ should be captured in blockchain by advertiser.
     + Attributes
         + code: 200 (number)
         + msg: OK (string)
-        + data (array[Transition])
+        + data (array[TransitionGet])
         Transitions list
 
 ### Create a new transition [POST]
@@ -77,7 +77,7 @@ should be captured in blockchain by advertiser.
         Requester private key in blockchain
         + public_key: BLnQWwtB2SEjisrmHLLAXU2drEaZZSVeFFuoWEwplMJwpEStOAzeZv0+SP/q4etJcaISoDOBnwvc9Pztuz9LUVw= (required)
         Requester public key in blockchain
-        + data (Transition)
+        + data (TransitionPost)
         Transition object
     
 + Response 202 (application/json)
@@ -101,10 +101,10 @@ This resource is intended for viewing details about transitions.
     + Attributes
         + code: 200 (number)
         + msg: OK (string)
-        + data (Transition)
+        + data (TransitionGet)
         Transition details
 
-## Transitions | Search [/v1/transitions/search{?query}{?limit}{?offset}]
+## Transitions | Search [/v1/transitions{?query}{?limit}{?offset}]
 
 ### Search transitions [GET]
 
@@ -124,7 +124,7 @@ See more at: https://docs.mongodb.com/manual/reference/method/db.collection.find
     + Attributes
         + code: 200 (number)
         + msg: OK (string)
-        + data (array[Transition])
+        + data (array[TransitionGet])
         Transitions filtered list
 
 ## Conversions [/v1/conversions{?limit}{?offset}]
@@ -134,7 +134,7 @@ This resource is intended for listing, sending and view details about conversion
 Conversion is "fact" of executing the initial agreement of advertiser with affiliate.
 There may be action, when user filled form data on advertiser's site, installed app or some more.
 The conversion may not be initial approved by advertiser and then it status will setted as "PENDING".
-When the advertiser made a decision about user, then new conversion will created with updated status ("APPROVED" or "DECLINED").
+When the advertiser made a decision about user, then new conversion will created with updated status ("APPROVED" or "REJECTED").
 
 ### View a conversions list [GET]
 
@@ -148,7 +148,7 @@ When the advertiser made a decision about user, then new conversion will created
     + Attributes
         + code: 200 (number)
         + msg: OK (string)
-        + data (array[Conversion])
+        + data (array[ConversionGet])
         Conversions list
 
 ### Create a new conversion [POST]
@@ -164,7 +164,7 @@ When the advertiser made a decision about user, then new conversion will created
         Requester private key in blockchain
         + public_key: BLnQWwtB2SEjisrmHLLAXU2drEaZZSVeFFuoWEwplMJwpEStOAzeZv0+SP/q4etJcaISoDOBnwvc9Pztuz9LUVw= (required)
         Requester public key in blockchain
-        + data (Conversion)
+        + data (ConversionPost)
         Transition object
 
 + Response 202 (application/json)
@@ -188,10 +188,10 @@ This resource is intended for viewing details about conversions.
     + Attributes
         + code: 200 (number)
         + msg: OK (string)
-        + data (Conversion)
+        + data (ConversionGet)
         Conversion details
 
-## Conversions | Search [/v1/conversions/search{?query}{?limit}{?offset}]
+## Conversions | Search [/v1/conversions{?query}{?limit}{?offset}]
 
 ### Search Conversions [GET]
 
@@ -211,15 +211,15 @@ See more at: https://docs.mongodb.com/manual/reference/method/db.collection.find
     + Attributes
         + code: 200 (number)
         + msg: OK (string)
-        + data (array[Conversion])
+        + data (array[ConversionGet])
         Conversion filtered list
 
 # Data Structures
 
 ## Status (object)
 + PENDING
-+ CONFIRMED
-+ DECLINED
++ APPROVED
++ REJECTED
 
 ## Account (object)
 + account_id: 5acacd9b6d9bf091f214ad7b (string)
@@ -229,13 +229,32 @@ Private key of user WARNING! Private Key should be kept in SAFE place!
 + public_key: BLnQWwtB2SEjisrmHLLAXU2drEaZZSVeFFuoWEwplMJwpEStOAzeZv0+SP/q4etJcaISoDOBnwvc9Pztuz9LUVw= (string)
 Public key of user
 
-## Transition (object)
+## TransitionGet (object)
+
++ _id: 3acaad9v49bf591f212ad7b (string)
+Unique transition identifier in blockchain
++ advertiser_account_id: 5acacd9b6d9bf091f214ad7b (string)
+Unique advertiser account identifier in blockchain
++ affiliate_account_id: 5acacd9b6d9bf091f214ad7b (string)
+Unique affiliate account identifier in blockchain (i.e. CPA Network)
++ click_id: test click (string)
+Unique click identifier from external system
++ stream_id: test stream (string)
+Stream identifier (synonym to platform id)
++ offer_id: test offer (string)
+Offer identifier in affiliate network
++ created_at: 2512351252135 (number)
+Unix time (seconds) datetime of transition
++ expires_in: 12312312379 (number)
+Date of transition expiration in seconds from Unix time epoch
+
+## TransitionPost (object)
 
 + advertiser_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique advertiser account identifier in blockchain
 + affiliate_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique affiliate account identifier in blockchain (i.e. CPA Network)
-+ click_id: test click (string) -
++ click_id: test click (string)
 Unique click identifier from external system
 + stream_id: test stream (string)
 Stream identifier (synonym to platform id)
@@ -244,13 +263,38 @@ Offer identifier in affiliate network
 + expires_in: 12312312379 (number)
 Date of transition expiration in seconds from Unix time epoch
 
-## Conversion (object)
+## ConversionGet (object)
+
++ _id: 3acaad9v49bf591f212ad7b (string)
+Unique conversion identifier in blockchain
++ advertiser_account_id: 5acacd9b6d9bf091f214ad7b (string)
+Unique advertiser account identifier in blockchain
++ affiliate_account_id: 5acacd9b6d9bf091f214ad7b (string)
+Unique affiliate account identifier in blockchain (i.e. CPA Network)
++ click_id: test click (string)
+Unique click identifier from external system
++ stream_id: test stream (string)
+Stream identifier (synonym to platform id)
++ offer_id: test offer (string)
+Offer identifier in affiliate network
++ client_id: test client (string)
+Client identifier in advertiser CRM
++ goal_id: 0 (string)
+Goal identifier discussed with affiliate network
++ created_at: 2512351252135 (number)
+Unix time (seconds) datetime of conversion
++ comment: test comment (string)
+Optional comment to conversion
++ status: PENDING (string, required)
+Status of Conversion
+
+## ConversionPost (object)
 
 + advertiser_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique advertiser account identifier in blockchain
 + affiliate_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique affiliate account identifier in blockchain (i.e. CPA Network)
-+ click_id: test click (string) -
++ click_id: test click (string)
 Unique click identifier from external system
 + stream_id: test stream (string)
 Stream identifier (synonym to platform id)
