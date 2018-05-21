@@ -37,7 +37,7 @@ type Account struct {
 
 const accountsCollection = "accounts"
 
-// AddAccount method adds new account if all checks was passed.
+// AddAccount method adds new account if all checks were passed.
 func (s *State) AddAccount(account *Account) error {
 	if s.HasAccount(account.ID) {
 		return errors.New("Account exists")
@@ -45,12 +45,12 @@ func (s *State) AddAccount(account *Account) error {
 	return s.SetAccount(account)
 }
 
-// SetAccount method adds account in the state.
+// SetAccount method adds account in state.
 func (s *State) SetAccount(account *Account) error {
 	return s.DB.C(accountsCollection).Insert(account)
 }
 
-// HasAccount method checks account existence in the state.
+// HasAccount method checks if account exists in state or not exists.
 func (s *State) HasAccount(id string) bool {
 	if res, _ := s.GetAccount(id); res != nil {
 		return true
@@ -58,7 +58,7 @@ func (s *State) HasAccount(id string) bool {
 	return false
 }
 
-// GetAccount method returns account from accounts collection in the state.
+// GetAccount method returns account from accounts collection by given accoutn id.
 func (s *State) GetAccount(id string) (*Account, error) {
 	var result *Account
 	return result, s.DB.C(accountsCollection).FindId(id).One(&result)
