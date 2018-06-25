@@ -116,13 +116,6 @@ func (k *Key) Verify(hash []byte, signature string) error {
 	return nil
 }
 
-func zero(in []byte) {
-	inLen := len(in)
-	for i := 0; i < inLen; i++ {
-		in[i] ^= in[i]
-	}
-}
-
 // Encrypt secures and authenticates its input using the public key
 // using ECDHE with AES-128-CBC-HMAC-SHA1.
 func (k *Key) Encrypt(in []byte) (out []byte, err error) {
