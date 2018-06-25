@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -48,7 +48,7 @@ func (c *BaseClient) AddAccount(acc *state.Account) error {
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.AccountAdd, txBytes)
+	tx := transaction.New(transaction.AccountAdd, c.AccountID, txBytes)
 	bs, _ := tx.ToBytes()
 	res, err := c.tm.BroadcastTxAsync(types.Tx(bs))
 	if err != nil {
@@ -101,7 +101,7 @@ func (c *BaseClient) AddTransition(tr *state.Transition) error {
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.TransitionAdd, txBytes)
+	tx := transaction.New(transaction.TransitionAdd, c.AccountID, txBytes)
 	if err := tx.Sign(c.Key); err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (c *BaseClient) AddConversion(cv *state.Conversion) error {
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.ConversionAdd, txBytes)
+	tx := transaction.New(transaction.ConversionAdd, c.AccountID, txBytes)
 	if err := tx.Sign(c.Key); err != nil {
 		return err
 	}
