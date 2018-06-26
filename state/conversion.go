@@ -31,7 +31,8 @@ import (
 //   - AdvertiserData keeps cpa_uid, client_id, goal_id, comment and some other relevant to postback private data.
 //     Encrypted by affiliate's public key.
 //   - PublicData keeps offer_id, stream_id, advertiser_account_id and affiliate's public key
-//     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash.
+//     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash,
+//     represented as base64 string.
 //   - Status may be one of PENDING, APPROVED, DECLINED.
 type Conversion struct {
 	ID                 string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`

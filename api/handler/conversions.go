@@ -39,10 +39,10 @@ import (
 //     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash.
 //   - Status may be one of PENDING, APPROVED, DECLINED.
 type Conversion struct {
-	AffiliateAccountID string `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
-	AdvertiserData     string `msg:"advertiser_data" json:"advertiser_data" mapstructure:"advertiser_data" bson:"advertiser_data"`
-	PublicData         string `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
-	Status             string `msg:"status" json:"status" mapstructure:"status" bson:"status"`
+	AffiliateAccountID string      `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
+	AdvertiserData     interface{} `msg:"advertiser_data" json:"advertiser_data" mapstructure:"advertiser_data" bson:"advertiser_data"`
+	PublicData         interface{} `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
+	Status             string      `msg:"status" json:"status" mapstructure:"status" bson:"status"`
 }
 
 // PostConversionsHandler uses FastAPI for sends new conversions requests in async mode to blockchain
@@ -72,7 +72,18 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	id, err := api.AddConversion(data.AffiliateAccountID, data.AdvertiserData, data.PublicData, data.Status)
+	advMrsh, err := json.Marshal(data.AdvertiserData)
+	if err != nil {
+		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+	pubMrsh, err := json.Marshal(data.PublicData)
+	if err != nil {
+		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+
+	id, err := api.AddConversion(data.AffiliateAccountID, advMrsh, pubMrsh, data.Status)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
