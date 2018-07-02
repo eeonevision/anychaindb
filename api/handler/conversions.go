@@ -39,9 +39,11 @@ import (
 //     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash.
 //   - Status may be one of PENDING, APPROVED, DECLINED.
 type Conversion struct {
+	ID                 string      `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
 	AffiliateAccountID string      `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
 	AdvertiserData     interface{} `msg:"advertiser_data" json:"advertiser_data" mapstructure:"advertiser_data" bson:"advertiser_data"`
 	PublicData         interface{} `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
+	CreatedAt          float64     `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
 	Status             string      `msg:"status" json:"status" mapstructure:"status" bson:"status"`
 }
 
@@ -90,7 +92,7 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 	}
 
 	// OK
-	writeResult(http.StatusAccepted, "Conversion added", id, w)
+	writeResult(http.StatusAccepted, "Conversion added", Conversion{ID: id}, w)
 }
 
 // GetConversionsHandler uses BaseAPI for search and list conversions.

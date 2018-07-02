@@ -21,14 +21,15 @@
 package tests
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"testing"
-
-	"github.com/leadschain/leadschain/client"
+	"time"
 
 	"github.com/leadschain/leadschain/api/handler"
 )
@@ -36,142 +37,228 @@ import (
 var host = flag.String("host", "localhost", "machine host")
 var apiPort = flag.String("apiport", "8889", "api port")
 var rpcPort = flag.String("rpcport", "46657", "rpc port")
-var count = flag.Int64("count", 0, "requests count")
+var update = flag.Bool("update", false, "update .golden files")
 
-func TestGenerateYandexTankAccounts(t *testing.T) {
-	apiHost := *host
-	apiPort := *apiPort
-	accountsCount := *count
-	// Create folder if not exists
-	_ = os.Mkdir("artifacts", os.ModePerm)
-	// Generate transactions batches
-	var requests []string
-	for i := int64(0); i < accountsCount; i++ {
-		body := []string{}
-		data, _ := json.Marshal(body)
-		query := fmt.Sprintf("/v1/accounts")
-		tr := fmt.Sprintf("POST %s HTTP/1.1\nHost: %s\nContent-Type: application/json\nUser-Agent: Tank\nContent-Length: %v\n\n%s",
-			query,
-			apiHost+":"+apiPort,
-			len(data), data)
-		tr = fmt.Sprintf("%v\n%s\n", len(tr), tr)
-		requests = append(requests, tr)
-	}
-
-	err := writeLines(requests, "artifacts/accounts_tank.txt")
+func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
+	// Send request to Leadschain
+	respRaw, err := http.Post("http://"+url+endpoint, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		t.Errorf("Error write to file")
+		return nil, err
+	}
+	defer respRaw.Body.Close()
+	contents, err := ioutil.ReadAll(respRaw.Body)
+	if err != nil {
+		return nil, err
+	}
+	return contents, nil
+}
+
+func doGETRequest(endpoint, url string) ([]byte, error) {
+	respRaw, err := http.Get("http://" + url + endpoint)
+	if err != nil {
+		return nil, err
+	}
+	defer respRaw.Body.Close()
+	contents, err := ioutil.ReadAll(respRaw.Body)
+	if err != nil {
+		return nil, err
+	}
+	return contents, nil
+}
+
+func TestCreateAccount(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/accounts")
+	url := *host + ":" + *apiPort
+	data, _ := json.Marshal(handler.Request{})
+	contents, err := doPOSTRequest(endpoint, url, data)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Check data in results
+	resp := handler.Result{}
+	err = json.Unmarshal(contents, &resp)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	account := resp.Data.(map[string]interface{})
+	if account["ID"] == "" {
+		t.Errorf("account has no ID: %s", account)
+		return
+	}
+	// Write account data to account.golden file
+	if *update {
+		// Create folder if not exists
+		_ = os.Mkdir("artifacts", os.ModePerm)
+		// Marshal account data to JSON string
+		res, err := json.Marshal(resp.Data)
+		if err != nil {
+			t.Errorf("%s", err)
+			return
+		}
+		// Write account id
+		err = ioutil.WriteFile("artifacts/account.golden", res, 0644)
+		if err != nil {
+			t.Errorf("%s", err)
+			return
+		}
+		// Wait for transaction approve
+		time.Sleep(time.Second * 5)
 	}
 }
 
-func TestGenerateYandexTankTransitions(t *testing.T) {
-	endpointURL := fmt.Sprintf("http://%s:%s", *host, *rpcPort)
-	apiHost := *host
-	apiPort := *apiPort
-	transitionsCount := *count
-	// Create folder if not exists
-	_ = os.Mkdir("artifacts", os.ModePerm)
-	// Create new affiliate account
-	api := client.NewAPI(endpointURL, nil, "")
-	id, pub, priv, err := api.CreateAccount()
+func TestGetAccount(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/accounts")
+	url := *host + ":" + *apiPort
+	// Read account.golden file
+	file, err := ioutil.ReadFile("artifacts/account.golden")
 	if err != nil {
-		t.Errorf("Error to create account: " + err.Error())
+		t.Errorf("%s", err)
+		return
 	}
-	t.Logf("Created account: %s, %s, %s", id, pub, priv)
-	//Generate transitions requests
-	var requests []string
-	for i := int64(0); i < transitionsCount; i++ {
-		body := handler.Transition{
-			AffiliateAccountID:  id,
-			AdvertiserAccountID: id,
-			ClickID:             "test click",
-			OfferID:             "test offer",
-			StreamID:            "test stream",
-			ExpiresIn:           15343242343,
-		}
-		req := handler.Request{
-			AccountID: id,
-			PrivKey:   priv,
-			PubKey:    pub,
-			Data:      body,
-		}
-		data, _ := json.Marshal(req)
-		query := fmt.Sprintf("/v1/transitions")
-		tr := fmt.Sprintf("POST %s HTTP/1.1\nHost: %s\nContent-Type: application/json\nUser-Agent: Tank\nContent-Length: %v\n\n%s",
-			query,
-			apiHost+":"+apiPort,
-			len(data), data)
-		tr = fmt.Sprintf("%v\n%s\n", len(tr), tr)
-		requests = append(requests, tr)
-	}
-	// Write to file
-	err = writeLines(requests, "artifacts/transitions_tank.txt")
+	// Parse account.golden file
+	acc1 := handler.Account{}
+	err = json.Unmarshal(file, &acc1)
 	if err != nil {
-		t.Errorf("Error write to file")
+		t.Errorf("%s", err)
+		return
+	}
+	if len(acc1.ID) == 0 {
+		t.Errorf("account.golden is empty: %s", acc1)
+		return
+	}
+	endpoint = endpoint + "/" + acc1.ID
+	// Find account in Leadschain server
+	contents, err := doGETRequest(endpoint, url)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	resp := handler.Result{}
+	err = json.Unmarshal(contents, &resp)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Compare accounts
+	acc2 := resp.Data.(map[string]interface{})
+	if acc2["_id"] != acc1.ID {
+		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1.ID, acc2["_id"])
+		return
 	}
 }
 
-func TestGenerateYandexTankConversions(t *testing.T) {
-	endpointURL := fmt.Sprintf("http://%s:%s", *host, *rpcPort)
-	apiHost := *host
-	apiPort := *apiPort
-	conversionsCount := *count
-	// Create folder if not exists
-	_ = os.Mkdir("artifacts", os.ModePerm)
-	// Create folder if not exists
-	_ = os.Mkdir("artifacts/tank_"+apiHost, os.ModePerm)
-	// Create new affiliate account
-	api := client.NewAPI(endpointURL, nil, "")
-	id, pub, priv, err := api.CreateAccount()
+func TestCreateConversion(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/conversions")
+	url := *host + ":" + *apiPort
+	// Read account.golden file
+	file, err := ioutil.ReadFile("artifacts/account.golden")
 	if err != nil {
-		t.Errorf("Error to create account: " + err.Error())
+		t.Errorf("%s", err)
+		return
 	}
-	t.Logf("Created account: %s, %s, %s", id, pub, priv)
-	//Generate conversions requests
-	var requests []string
-	for i := int64(0); i < conversionsCount; i++ {
-		body := handler.Conversion{
-			AffiliateAccountID:  id,
-			AdvertiserAccountID: id,
-			ClickID:             "test click",
-			OfferID:             "test offer",
-			ClientID:            "test client",
-			GoalID:              "test goal",
-			StreamID:            "test stream",
-			Comment:             "Test comment",
-			Status:              "CONFIRMED",
-		}
-		req := handler.Request{
-			AccountID: id,
-			PrivKey:   priv,
-			PubKey:    pub,
-			Data:      body,
-		}
-		data, _ := json.Marshal(req)
-		tr := fmt.Sprintf("POST %s HTTP/1.1\nHost: %s\nContent-Type: application/json\nUser-Agent: Tank\nContent-Length: %v\n\n%s",
-			"/v1/conversions",
-			apiHost+":"+apiPort,
-			len(data), data)
-		tr = fmt.Sprintf("%v\n%s\n", len(tr), tr)
-		requests = append(requests, tr)
-	}
-	// Write to file
-	err = writeLines(requests, "artifacts/tank_"+apiHost+"/"+"conversions_tank_"+apiHost+".txt")
+	// Parse account.golden file
+	acc1 := handler.Account{}
+	err = json.Unmarshal(file, &acc1)
 	if err != nil {
-		t.Errorf("Error write to file")
+		t.Errorf("%s", err)
+		return
+	}
+	if len(acc1.ID) == 0 {
+		t.Errorf("account.golden is empty: %s", acc1)
+		return
+	}
+	// Send request
+	data, _ := json.Marshal(handler.Request{
+		AccountID: acc1.ID,
+		PrivKey:   acc1.Priv,
+		PubKey:    acc1.Pub,
+		Data: handler.Conversion{
+			AffiliateAccountID: acc1.ID,
+			AdvertiserData:     "test_data",
+			PublicData:         "test_public_data",
+			Status:             "ACCEPTED",
+		}})
+	contents, err := doPOSTRequest(endpoint, url, data)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Check data in results
+	resp := handler.Result{}
+	err = json.Unmarshal(contents, &resp)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	cnv := resp.Data.(map[string]interface{})
+	if cnv["_id"] == "" {
+		t.Errorf("conversion has no id: %s", cnv)
+		return
+	}
+	// Write conversion data to conversion.golden file
+	if *update {
+		// Create folder if not exists
+		_ = os.Mkdir("artifacts", os.ModePerm)
+		// Marshal conversion data to JSON string
+		res, err := json.Marshal(resp.Data)
+		if err != nil {
+			t.Errorf("%s", err)
+			return
+		}
+		// Write account id
+		err = ioutil.WriteFile("artifacts/conversion.golden", res, 0644)
+		if err != nil {
+			t.Errorf("%s", err)
+			return
+		}
+		// Wait for transaction approve
+		time.Sleep(time.Second * 5)
 	}
 }
 
-func writeLines(lines []string, path string) error {
-	file, err := os.Create(path)
+func TestGetConversion(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/conversions")
+	url := *host + ":" + *apiPort
+	// Read conversion.golden file
+	file, err := ioutil.ReadFile("artifacts/conversion.golden")
 	if err != nil {
-		return err
+		t.Errorf("%s", err)
+		return
 	}
-	defer file.Close()
-
-	w := bufio.NewWriter(file)
-	for _, line := range lines {
-		fmt.Fprint(w, line)
+	// Parse conversion.golden file
+	cnv1 := handler.Conversion{}
+	err = json.Unmarshal(file, &cnv1)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
 	}
-	return w.Flush()
+	if len(cnv1.ID) == 0 {
+		t.Errorf("conversion.golden is empty: %v", cnv1)
+		return
+	}
+	endpoint = endpoint + "/" + cnv1.ID
+	// Find conversion in Leadschain server
+	contents, err := doGETRequest(endpoint, url)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	resp := handler.Result{}
+	err = json.Unmarshal(contents, &resp)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Compare conversions
+	cnv2 := resp.Data.(map[string]interface{})
+	if cnv2["_id"] != cnv1.ID {
+		t.Errorf("conversions are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
+		return
+	}
 }

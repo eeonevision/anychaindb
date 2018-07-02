@@ -25,3 +25,6 @@ api/tests/artifacts/*
 
 # Ignore envornment files
 .env
+
+# Ignore .golden test temporary file
+.golden
