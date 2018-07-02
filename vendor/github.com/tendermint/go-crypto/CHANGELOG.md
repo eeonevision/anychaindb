@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.9.0
+
+BREAKING CHANGES
+
+- `priv.PubKey()` no longer returns an error. Any applicable errors (such as when fetching the public key from a hardware wallet) should be checked and returned when constructing the private key.
+
+## 0.8.0
+
+BREAKING CHANGES
+
+- update ed25519 signature scheme to truncated sha256 (#112)
+- renaming registered concrete type path for ed25519 signatures (#110)
+
+IMPROVEMENT
+ 
+ - SimpleProofsFromMap returns ordered keys (#115)
+ - return error on `privkey.Sign()` and `privkey.Pubkey()` (#117)
+ 
+FEATURE
+
+ - rework API to work with local and external keys (offline, HW wallets, and Ledger) (#117)    
+
+## 0.7.0
+
+**May 30th, 2018**
+
+BREAKING CHANGES
+
+No breaking changes compared to 0.6.2, but making up for the version bump that
+should have happened in 0.6.1.
+
+We also bring in the `tmlibs/merkle` package with breaking changes:
+
+- change the hash function from RIPEMD160 to tmhash (first 20-bytes of SHA256)
+- remove unused funcs and unexport SimpleMap
+
+FEATURES
+
+- [xchacha20poly1305] New authenticated encryption module
+- [merkle] Moved in from tmlibs
+- [merkle/tmhash] New hash function: the first 20-bytes of SHA256
+
+IMPROVEMENTS
+
+- Remove some dead code
+- Use constant-time compare for signatures
+
+BUG FIXES
+
+- Fix MixEntropy weakness
+- Fix PrivKeyEd25519.Generate()
+
 ## 0.6.2 (April 9, 2018)
 
 IMPROVEMENTS

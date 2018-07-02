@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 
 	amino "github.com/tendermint/go-amino"
+	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 	"github.com/tendermint/tendermint/types"
 	cmn "github.com/tendermint/tmlibs/common"
-	tmpubsub "github.com/tendermint/tmlibs/pubsub"
 )
 
 /*
@@ -126,6 +126,15 @@ func (c *HTTP) DumpConsensusState() (*ctypes.ResultDumpConsensusState, error) {
 	return result, nil
 }
 
+func (c *HTTP) ConsensusState() (*ctypes.ResultConsensusState, error) {
+	result := new(ctypes.ResultConsensusState)
+	_, err := c.rpc.Call("consensus_state", map[string]interface{}{}, result)
+	if err != nil {
+		return nil, errors.Wrap(err, "ConsensusState")
+	}
+	return result, nil
+}
+
 func (c *HTTP) Health() (*ctypes.ResultHealth, error) {
 	result := new(ctypes.ResultHealth)
 	_, err := c.rpc.Call("health", map[string]interface{}{}, result)
@@ -195,17 +204,19 @@ func (c *HTTP) Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {
 	return result, nil
 }
 
-func (c *HTTP) TxSearch(query string, prove bool) ([]*ctypes.ResultTx, error) {
-	results := new([]*ctypes.ResultTx)
+func (c *HTTP) TxSearch(query string, prove bool, page, perPage int) (*ctypes.ResultTxSearch, error) {
+	result := new(ctypes.ResultTxSearch)
 	params := map[string]interface{}{
-		"query": query,
-		"prove": prove,
+		"query":    query,
+		"prove":    prove,
+		"page":     page,
+		"per_page": perPage,
 	}
-	_, err := c.rpc.Call("tx_search", params, results)
+	_, err := c.rpc.Call("tx_search", params, result)
 	if err != nil {
 		return nil, errors.Wrap(err, "TxSearch")
 	}
-	return *results, nil
+	return result, nil
 }
 
 func (c *HTTP) Validators(height *int64) (*ctypes.ResultValidators, error) {

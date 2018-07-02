@@ -124,7 +124,7 @@ func (b *Block) MakePartSet(partSize int) *PartSet {
 }
 
 // HashesTo is a convenience function that checks if a block hashes to the given argument.
-// A nil block never hashes to anything, and nothing hashes to a nil hash.
+// Returns false if the block is nil or the hash is empty.
 func (b *Block) HashesTo(hash []byte) bool {
 	if len(hash) == 0 {
 		return false
@@ -265,7 +265,7 @@ type Commit struct {
 	// NOTE: The Precommits are in order of address to preserve the bonded ValidatorSet order.
 	// Any peer with a block can gossip precommits by index with a peer without recalculating the
 	// active ValidatorSet.
-	BlockID    BlockID `json:"blockID"`
+	BlockID    BlockID `json:"block_id"`
 	Precommits []*Vote `json:"precommits"`
 
 	// Volatile
