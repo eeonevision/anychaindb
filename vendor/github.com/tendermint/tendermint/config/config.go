@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+const (
+	// FuzzModeDrop is a mode in which we randomly drop reads/writes, connections or sleep
+	FuzzModeDrop = iota
+	// FuzzModeDelay is a mode in which we randomly sleep
+	FuzzModeDelay
+)
+
 // NOTE: Most of the structs & relevant comments + the
 // default configuration options were used to manually
 // generate the config.toml. Please reflect any changes
@@ -144,7 +151,7 @@ func DefaultBaseConfig() BaseConfig {
 		PrivValidator:     defaultPrivValPath,
 		NodeKey:           defaultNodeKeyPath,
 		Moniker:           defaultMoniker,
-		ProxyApp:          "tcp://127.0.0.1:46658",
+		ProxyApp:          "tcp://127.0.0.1:26658",
 		ABCI:              "socket",
 		LogLevel:          DefaultPackageLogLevels(),
 		ProfListenAddress: "",
@@ -221,7 +228,7 @@ type RPCConfig struct {
 // DefaultRPCConfig returns a default configuration for the RPC server
 func DefaultRPCConfig() *RPCConfig {
 	return &RPCConfig{
-		ListenAddress:     "tcp://0.0.0.0:46657",
+		ListenAddress:     "tcp://0.0.0.0:26657",
 		GRPCListenAddress: "",
 		Unsafe:            false,
 	}
@@ -287,17 +294,29 @@ type P2PConfig struct {
 	// Does not work if the peer-exchange reactor is disabled.
 	SeedMode bool `mapstructure:"seed_mode"`
 
-	// Authenticated encryption
-	AuthEnc bool `mapstructure:"auth_enc"`
-
-	// Comma separated list of peer IDs to keep private (will not be gossiped to other peers)
+	// Comma separated list of peer IDs to keep private (will not be gossiped to
+	// other peers)
 	PrivatePeerIDs string `mapstructure:"private_peer_ids"`
+
+	// Toggle to disable guard against peers connecting from the same ip.
+	AllowDuplicateIP bool `mapstructure:"allow_duplicate_ip"`
+
+	// Peer connection configuration.
+	HandshakeTimeout time.Duration `mapstructure:"handshake_timeout"`
+	DialTimeout      time.Duration `mapstructure:"dial_timeout"`
+
+	// Testing params.
+	// Force dial to fail
+	TestDialFail bool `mapstructure:"test_dial_fail"`
+	// FUzz connection
+	TestFuzz       bool            `mapstructure:"test_fuzz"`
+	TestFuzzConfig *FuzzConnConfig `mapstructure:"test_fuzz_config"`
 }
 
 // DefaultP2PConfig returns a default configuration for the peer-to-peer layer
 func DefaultP2PConfig() *P2PConfig {
 	return &P2PConfig{
-		ListenAddress:           "tcp://0.0.0.0:46656",
+		ListenAddress:           "tcp://0.0.0.0:26656",
 		AddrBook:                defaultAddrBookPath,
 		AddrBookStrict:          true,
 		MaxNumPeers:             50,
@@ -307,7 +326,12 @@ func DefaultP2PConfig() *P2PConfig {
 		RecvRate:                512000, // 500 kB/s
 		PexReactor:              true,
 		SeedMode:                false,
-		AuthEnc:                 true,
+		AllowDuplicateIP:        true, // so non-breaking yet
+		HandshakeTimeout:        20 * time.Second,
+		DialTimeout:             3 * time.Second,
+		TestDialFail:            false,
+		TestFuzz:                false,
+		TestFuzzConfig:          DefaultFuzzConnConfig(),
 	}
 }
 
@@ -317,12 +341,33 @@ func TestP2PConfig() *P2PConfig {
 	cfg.ListenAddress = "tcp://0.0.0.0:36656"
 	cfg.SkipUPNP = true
 	cfg.FlushThrottleTimeout = 10
+	cfg.AllowDuplicateIP = true
 	return cfg
 }
 
 // AddrBookFile returns the full path to the address book
 func (cfg *P2PConfig) AddrBookFile() string {
 	return rootify(cfg.AddrBook, cfg.RootDir)
+}
+
+// FuzzConnConfig is a FuzzedConnection configuration.
+type FuzzConnConfig struct {
+	Mode         int
+	MaxDelay     time.Duration
+	ProbDropRW   float64
+	ProbDropConn float64
+	ProbSleep    float64
+}
+
+// DefaultFuzzConnConfig returns the default config.
+func DefaultFuzzConnConfig() *FuzzConnConfig {
+	return &FuzzConnConfig{
+		Mode:         FuzzModeDrop,
+		MaxDelay:     3 * time.Second,
+		ProbDropRW:   0.2,
+		ProbDropConn: 0.00,
+		ProbSleep:    0.00,
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -335,6 +380,7 @@ type MempoolConfig struct {
 	RecheckEmpty bool   `mapstructure:"recheck_empty"`
 	Broadcast    bool   `mapstructure:"broadcast"`
 	WalPath      string `mapstructure:"wal_dir"`
+	Size         int    `mapstructure:"size"`
 	CacheSize    int    `mapstructure:"cache_size"`
 }
 
@@ -345,6 +391,7 @@ func DefaultMempoolConfig() *MempoolConfig {
 		RecheckEmpty: true,
 		Broadcast:    true,
 		WalPath:      filepath.Join(defaultDataDir, "mempool.wal"),
+		Size:         100000,
 		CacheSize:    100000,
 	}
 }
@@ -367,10 +414,9 @@ func (cfg *MempoolConfig) WalDir() string {
 // ConsensusConfig defines the confuguration for the Tendermint consensus service,
 // including timeouts and details about the WAL and the block structure.
 type ConsensusConfig struct {
-	RootDir  string `mapstructure:"home"`
-	WalPath  string `mapstructure:"wal_file"`
-	WalLight bool   `mapstructure:"wal_light"`
-	walFile  string // overrides WalPath if set
+	RootDir string `mapstructure:"home"`
+	WalPath string `mapstructure:"wal_file"`
+	walFile string // overrides WalPath if set
 
 	// All timeouts are in milliseconds
 	TimeoutPropose        int `mapstructure:"timeout_propose"`
@@ -401,7 +447,6 @@ type ConsensusConfig struct {
 func DefaultConsensusConfig() *ConsensusConfig {
 	return &ConsensusConfig{
 		WalPath:                     filepath.Join(defaultDataDir, "cs.wal", "wal"),
-		WalLight:                    false,
 		TimeoutPropose:              3000,
 		TimeoutProposeDelta:         500,
 		TimeoutPrevote:              1000,

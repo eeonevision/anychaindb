@@ -1,13 +1,16 @@
 package version
 
-const Maj = "0"
-const Min = "19"
-const Fix = "0"
+// Version components
+const (
+	Maj = "0"
+	Min = "21"
+	Fix = "0"
+)
 
 var (
 	// Version is the current version of Tendermint
 	// Must be a string because scripts like dist.sh read this file.
-	Version = "0.19.0"
+	Version = "0.21.0"
 
 	// GitCommit is the current HEAD set using ldflags.
 	GitCommit string

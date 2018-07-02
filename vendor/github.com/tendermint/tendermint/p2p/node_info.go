@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"fmt"
+	cmn "github.com/tendermint/tmlibs/common"
 	"strings"
 )
 
@@ -10,6 +11,7 @@ const (
 	maxNumChannels  = 16    // plenty of room for upgrades, for now
 )
 
+// Max size of the NodeInfo struct
 func MaxNodeInfoSize() int {
 	return maxNodeInfoSize
 }
@@ -18,26 +20,47 @@ func MaxNodeInfoSize() int {
 // between two peers during the Tendermint P2P handshake.
 type NodeInfo struct {
 	// Authenticate
+	// TODO: replace with NetAddress
 	ID         ID     `json:"id"`          // authenticated identifier
 	ListenAddr string `json:"listen_addr"` // accepting incoming
 
-	// Check compatibility
-	Network  string `json:"network"`  // network/chain ID
-	Version  string `json:"version"`  // major.minor.revision
-	Channels []byte `json:"channels"` // channels this node knows about
+	// Check compatibility.
+	// Channels are HexBytes so easier to read as JSON
+	Network  string       `json:"network"`  // network/chain ID
+	Version  string       `json:"version"`  // major.minor.revision
+	Channels cmn.HexBytes `json:"channels"` // channels this node knows about
 
-	// Sanitize
+	// ASCIIText fields
 	Moniker string   `json:"moniker"` // arbitrary moniker
 	Other   []string `json:"other"`   // other application specific data
 }
 
 // Validate checks the self-reported NodeInfo is safe.
 // It returns an error if there
-// are too many Channels or any duplicate Channels.
+// are too many Channels, if there are any duplicate Channels,
+// if the ListenAddr is malformed, or if the ListenAddr is a host name
+// that can not be resolved to some IP.
 // TODO: constraints for Moniker/Other? Or is that for the UI ?
+// JAE: It needs to be done on the client, but to prevent ambiguous
+// unicode characters, maybe it's worth sanitizing it here.
+// In the future we might want to validate these, once we have a
+// name-resolution system up.
+// International clients could then use punycode (or we could use
+// url-encoding), and we just need to be careful with how we handle that in our
+// clients. (e.g. off by default).
 func (info NodeInfo) Validate() error {
 	if len(info.Channels) > maxNumChannels {
 		return fmt.Errorf("info.Channels is too long (%v). Max is %v", len(info.Channels), maxNumChannels)
+	}
+
+	// Sanitize ASCII text fields.
+	if !cmn.IsASCIIText(info.Moniker) || cmn.ASCIITrim(info.Moniker) == "" {
+		return fmt.Errorf("info.Moniker must be valid non-empty ASCII text without tabs, but got %v.", info.Moniker)
+	}
+	for i, s := range info.Other {
+		if !cmn.IsASCIIText(s) || cmn.ASCIITrim(s) == "" {
+			return fmt.Errorf("info.Other[%v] must be valid non-empty ASCII text without tabs, but got %v.", i, s)
+		}
 	}
 
 	channels := make(map[byte]struct{})
@@ -48,11 +71,14 @@ func (info NodeInfo) Validate() error {
 		}
 		channels[ch] = struct{}{}
 	}
-	return nil
+
+	// ensure ListenAddr is good
+	_, err := NewNetAddressString(IDAddressString(info.ID, info.ListenAddr))
+	return err
 }
 
 // CompatibleWith checks if two NodeInfo are compatible with eachother.
-// CONTRACT: two nodes are compatible if the major/minor versions match and network match
+// CONTRACT: two nodes are compatible if the major version matches and network match
 // and they have at least one channel in common.
 func (info NodeInfo) CompatibleWith(other NodeInfo) error {
 	iMajor, iMinor, _, iErr := splitVersion(info.Version)
@@ -73,9 +99,9 @@ func (info NodeInfo) CompatibleWith(other NodeInfo) error {
 		return fmt.Errorf("Peer is on a different major version. Got %v, expected %v", oMajor, iMajor)
 	}
 
-	// minor version must match
+	// minor version can differ
 	if iMinor != oMinor {
-		return fmt.Errorf("Peer is on a different minor version. Got %v, expected %v", oMinor, iMinor)
+		// ok
 	}
 
 	// nodes must be on the same network
@@ -112,7 +138,14 @@ OUTER_LOOP:
 func (info NodeInfo) NetAddress() *NetAddress {
 	netAddr, err := NewNetAddressString(IDAddressString(info.ID, info.ListenAddr))
 	if err != nil {
-		panic(err) // everything should be well formed by now
+		switch err.(type) {
+		case ErrNetAddressLookup:
+			// XXX If the peer provided a host name  and the lookup fails here
+			// we're out of luck.
+			// TODO: use a NetAddress in NodeInfo
+		default:
+			panic(err) // everything should be well formed by now
+		}
 	}
 	return netAddr
 }

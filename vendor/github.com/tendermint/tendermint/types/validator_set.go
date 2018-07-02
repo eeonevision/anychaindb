@@ -59,16 +59,18 @@ func (valSet *ValidatorSet) IncrementAccum(times int) {
 	// Decrement the validator with most accum times times
 	for i := 0; i < times; i++ {
 		mostest := validatorsHeap.Peek().(*Validator)
-		if i == times-1 {
-			valSet.Proposer = mostest
-		}
-
 		// mind underflow
 		mostest.Accum = safeSubClip(mostest.Accum, valSet.TotalVotingPower())
-		validatorsHeap.Update(mostest, accumComparable{mostest})
+
+		if i == times-1 {
+			valSet.Proposer = mostest
+		} else {
+			validatorsHeap.Update(mostest, accumComparable{mostest})
+		}
 	}
 }
 
+// Copy each validator into a new ValidatorSet
 func (valSet *ValidatorSet) Copy() *ValidatorSet {
 	validators := make([]*Validator, len(valSet.Validators))
 	for i, val := range valSet.Validators {
@@ -368,6 +370,7 @@ func (valSet *ValidatorSet) String() string {
 	return valSet.StringIndented("")
 }
 
+// String
 func (valSet *ValidatorSet) StringIndented(indent string) string {
 	if valSet == nil {
 		return "nil-ValidatorSet"
@@ -384,7 +387,7 @@ func (valSet *ValidatorSet) StringIndented(indent string) string {
 %s}`,
 		indent, valSet.GetProposer().String(),
 		indent,
-		indent, strings.Join(valStrings, "\n"+indent+"    "),
+		indent, strings.Join(valStrings, "\n"+indent+"  "),
 		indent)
 
 }
@@ -392,6 +395,7 @@ func (valSet *ValidatorSet) StringIndented(indent string) string {
 //-------------------------------------
 // Implements sort for sorting validators by address.
 
+// Sort validators by address
 type ValidatorsByAddress []*Validator
 
 func (vs ValidatorsByAddress) Len() int {

@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 
+	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/lib/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-	tmquery "github.com/tendermint/tmlibs/pubsub/query"
 )
 
 // Subscribe for events via WebSocket.
@@ -46,13 +46,13 @@ import (
 // https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants
 //
 // For complete query syntax, check out
-// https://godoc.org/github.com/tendermint/tmlibs/pubsub/query.
+// https://godoc.org/github.com/tendermint/tendermint/libs/pubsub/query.
 //
 // ```go
-// import "github.com/tendermint/tmlibs/pubsub/query"
+// import "github.com/tendermint/tendermint/libs/pubsub/query"
 // import "github.com/tendermint/tendermint/types"
 //
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // ctx, cancel := context.WithTimeout(context.Background(), timeout)
 // defer cancel()
 // query := query.MustParse("tm.event = 'Tx' AND tx.height = 3")
@@ -114,7 +114,7 @@ func Subscribe(wsCtx rpctypes.WSRPCContext, query string) (*ctypes.ResultSubscri
 // Unsubscribe from events via WebSocket.
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // err := client.Unsubscribe("test-client", query)
 // ```
 //
@@ -153,7 +153,7 @@ func Unsubscribe(wsCtx rpctypes.WSRPCContext, query string) (*ctypes.ResultUnsub
 // Unsubscribe from all events via WebSocket.
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // err := client.UnsubscribeAll("test-client")
 // ```
 //

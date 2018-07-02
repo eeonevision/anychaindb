@@ -37,13 +37,13 @@ func EnsureRoot(rootDir string) {
 
 	// Write default config file if missing.
 	if !cmn.FileExists(configFilePath) {
-		writeDefaultCondigFile(configFilePath)
+		writeDefaultConfigFile(configFilePath)
 	}
 }
 
 // XXX: this func should probably be called by cmd/tendermint/commands/init.go
 // alongside the writing of the genesis.json and priv_validator.json
-func writeDefaultCondigFile(configFilePath string) {
+func writeDefaultConfigFile(configFilePath string) {
 	WriteConfigFile(configFilePath, DefaultConfig())
 }
 
@@ -81,7 +81,7 @@ fast_sync = {{ .BaseConfig.FastSync }}
 db_backend = "{{ .BaseConfig.DBBackend }}"
 
 # Database directory
-db_path = "{{ .BaseConfig.DBPath }}"
+db_path = "{{ js .BaseConfig.DBPath }}"
 
 # Output level for logging, including package level options
 log_level = "{{ .BaseConfig.LogLevel }}"
@@ -89,13 +89,13 @@ log_level = "{{ .BaseConfig.LogLevel }}"
 ##### additional base config options #####
 
 # Path to the JSON file containing the initial validator set and other meta data
-genesis_file = "{{ .BaseConfig.Genesis }}"
+genesis_file = "{{ js .BaseConfig.Genesis }}"
 
 # Path to the JSON file containing the private key to use as a validator in the consensus protocol
-priv_validator_file = "{{ .BaseConfig.PrivValidator }}"
+priv_validator_file = "{{ js .BaseConfig.PrivValidator }}"
 
 # Path to the JSON file containing the private key to use for node authentication in the p2p protocol
-node_key_file = "{{ .BaseConfig.NodeKey}}"
+node_key_file = "{{ js .BaseConfig.NodeKey}}"
 
 # Mechanism to connect to the ABCI application: socket | grpc
 abci = "{{ .BaseConfig.ABCI }}"
@@ -136,7 +136,7 @@ seeds = "{{ .P2P.Seeds }}"
 persistent_peers = "{{ .P2P.PersistentPeers }}"
 
 # Path to address book
-addr_book_file = "{{ .P2P.AddrBook }}"
+addr_book_file = "{{ js .P2P.AddrBook }}"
 
 # Set true for strict address routability rules
 addr_book_strict = {{ .P2P.AddrBookStrict }}
@@ -165,9 +165,6 @@ pex = {{ .P2P.PexReactor }}
 # Does not work if the peer-exchange reactor is disabled.
 seed_mode = {{ .P2P.SeedMode }}
 
-# Authenticated encryption
-auth_enc = {{ .P2P.AuthEnc }}
-
 # Comma separated list of peer IDs to keep private (will not be gossiped to other peers)
 private_peer_ids = "{{ .P2P.PrivatePeerIDs }}"
 
@@ -177,13 +174,18 @@ private_peer_ids = "{{ .P2P.PrivatePeerIDs }}"
 recheck = {{ .Mempool.Recheck }}
 recheck_empty = {{ .Mempool.RecheckEmpty }}
 broadcast = {{ .Mempool.Broadcast }}
-wal_dir = "{{ .Mempool.WalPath }}"
+wal_dir = "{{ js .Mempool.WalPath }}"
+
+# size of the mempool
+size = {{ .Mempool.Size }}
+
+# size of the cache (used to filter transactions we saw earlier)
+cache_size = {{ .Mempool.CacheSize }}
 
 ##### consensus configuration options #####
 [consensus]
 
-wal_file = "{{ .Consensus.WalPath }}"
-wal_light = {{ .Consensus.WalLight }}
+wal_file = "{{ js .Consensus.WalPath }}"
 
 # All timeouts are in milliseconds
 timeout_propose = {{ .Consensus.TimeoutPropose }}
@@ -267,7 +269,7 @@ func ResetTestRoot(testName string) *Config {
 
 	// Write default config file if missing.
 	if !cmn.FileExists(configFilePath) {
-		writeDefaultCondigFile(configFilePath)
+		writeDefaultConfigFile(configFilePath)
 	}
 	if !cmn.FileExists(genesisFilePath) {
 		cmn.MustWriteFile(genesisFilePath, []byte(testGenesis), 0644)
