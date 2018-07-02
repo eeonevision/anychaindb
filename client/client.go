@@ -153,20 +153,20 @@ func (api *apiClient) AddConversion(affiliateID string, advertiserData, publicDa
 		return "", err
 	}
 
-	// BLAKE2B 256-bit hashed public data, represented as base64 string
+	// BLAKE2B 256-bit hashed public data
 	blake2BHash, _ := blake2b.New256(nil)
 	_, err = blake2BHash.Write(publicData)
 	if err != nil {
 		return "", err
 	}
-	publicDataHashed := base64.StdEncoding.EncodeToString(blake2BHash.Sum(nil))
 
 	if err = api.fast.AddConversion(&state.Conversion{
-		ID:             id,
-		AdvertiserData: string(advertiserDataEnc),
-		PublicData:     publicDataHashed,
-		CreatedAt:      float64(createdAt),
-		Status:         status,
+		ID:                 id,
+		AffiliateAccountID: affiliateID,
+		AdvertiserData:     base64.StdEncoding.EncodeToString(advertiserDataEnc),
+		PublicData:         base64.StdEncoding.EncodeToString(blake2BHash.Sum(nil)),
+		CreatedAt:          float64(createdAt),
+		Status:             status,
 	}); err != nil {
 		return "", err
 	}

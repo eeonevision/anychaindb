@@ -29,7 +29,7 @@ import (
 
 // Conversion struct keep conversion related fields.
 //   - AdvertiserData keeps cpa_uid, client_id, goal_id, comment and some other relevant to postback private data.
-//     Encrypted by affiliate's public key.
+//     Encrypted by affiliate's public key by ECDH algorithm and represented as base64 string.
 //   - PublicData keeps offer_id, stream_id, advertiser_account_id and affiliate's public key
 //     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash,
 //     represented as base64 string.
