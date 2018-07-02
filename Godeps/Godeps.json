@@ -269,13 +269,13 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/go-crypto",
-			"Comment": "v0.9.0",
-			"Rev": "6a6b591a3d7592a04b46af95451cb5be3b114f76"
+			"Comment": "v0.9.0-1-g8fd8c84",
+			"Rev": "8fd8c849adfed8bbbae57c25a1ee342e134f0f97"
 		},
 		{
 			"ImportPath": "github.com/tendermint/go-crypto/tmhash",
-			"Comment": "v0.9.0",
-			"Rev": "6a6b591a3d7592a04b46af95451cb5be3b114f76"
+			"Comment": "v0.9.0-1-g8fd8c84",
+			"Rev": "8fd8c849adfed8bbbae57c25a1ee342e134f0f97"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/blockchain",
