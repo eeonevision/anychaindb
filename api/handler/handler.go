@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -28,7 +28,7 @@ import (
 
 var endpoint string
 
-// Request struct represents request related fields
+// Request struct represents request related fields.
 //
 // AccountID - unique identifier of request-maker in blockchain
 // PrivKey - private key of account
@@ -41,7 +41,8 @@ type Request struct {
 	Data      interface{} `json:"data"`
 }
 
-type result struct {
+// Result struct represents response from Leadschain API.
+type Result struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
@@ -56,7 +57,7 @@ type mongoQuery struct {
 
 func writeResult(code int, message string, data interface{}, w http.ResponseWriter) {
 	w.WriteHeader(code)
-	trs, _ := json.Marshal(result{
+	trs, _ := json.Marshal(Result{
 		Code: code,
 		Msg:  message,
 		Data: data,
@@ -64,7 +65,7 @@ func writeResult(code int, message string, data interface{}, w http.ResponseWrit
 	w.Write(trs)
 }
 
-// SetEndpoint method defines validator GRPC address
+// SetEndpoint method defines validator GRPC address.
 func SetEndpoint(addr string) {
 	endpoint = addr
 }

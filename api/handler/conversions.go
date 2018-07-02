@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -33,27 +33,18 @@ import (
 )
 
 // Conversion struct describes conversion related fields
-// All fields, except AdvertiserAccountID and AffiliateAccountID are optional.
-//
-// AdvertiserAccountID - unique identifier of advertiser account
-// AffiliateAccountID - unique identifier of affiliate account
-// ClickID - unique identifier of user's click (usually transmitted from affiliate network)
-// StreamID (a.k.a. PlatformID) - uniques identifier of webmaster's platform in afiliate network
-// OfferID - unique identifier of offer in affiliate network
-// ClientID - unique identifer of client in CRM (database) of advertiser
-// GoalID - type of conversion in affiliate network (maybe any, like: "per lead, filled form or so on...")
-// Comment - commentary from advertiser for current conversion
-// Status - status of conversion (PENDING, DECLINED, CONFIRMED)
+//   - AdvertiserData keeps cpa_uid, client_id, goal_id, comment and some other relevant to postback private data.
+//     Encrypted by affiliate's public key.
+//   - PublicData keeps offer_id, stream_id, advertiser_account_id and affiliate's public key
+//     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash.
+//   - Status may be one of PENDING, APPROVED, DECLINED.
 type Conversion struct {
-	AdvertiserAccountID string `json:"advertiser_account_id" mapstructure:"advertiser_account_id" bson:"advertiser_account_id"`
-	AffiliateAccountID  string `json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
-	ClickID             string `json:"click_id" mapstructure:"click_id" bson:"click_id"`
-	StreamID            string `json:"stream_id" mapstructure:"stream_id" bson:"stream_id"`
-	OfferID             string `json:"offer_id" mapstructure:"offer_id" bson:"offer_id"`
-	ClientID            string `json:"client_id" mapstructure:"client_id" bson:"client_id"`
-	GoalID              string `json:"goal_id" mapstructure:"goal_id" bson:"goal_id"`
-	Comment             string `json:"comment" mapstructure:"comment,omitempty" bson:"comment"`
-	Status              string `json:"status" mapstructure:"status" bson:"status"`
+	ID                 string      `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
+	AffiliateAccountID string      `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
+	AdvertiserData     interface{} `msg:"advertiser_data" json:"advertiser_data" mapstructure:"advertiser_data" bson:"advertiser_data"`
+	PublicData         interface{} `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
+	CreatedAt          float64     `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
+	Status             string      `msg:"status" json:"status" mapstructure:"status" bson:"status"`
 }
 
 // PostConversionsHandler uses FastAPI for sends new conversions requests in async mode to blockchain
@@ -83,15 +74,25 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	id, err := api.AddConversion(data.AffiliateAccountID, data.AdvertiserAccountID, data.ClickID, data.StreamID,
-		data.ClientID, data.GoalID, data.OfferID, data.Status, data.Comment)
+	advMrsh, err := json.Marshal(data.AdvertiserData)
+	if err != nil {
+		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+	pubMrsh, err := json.Marshal(data.PublicData)
+	if err != nil {
+		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		return
+	}
+
+	id, err := api.AddConversion(data.AffiliateAccountID, advMrsh, pubMrsh, data.Status)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
 
 	// OK
-	writeResult(http.StatusAccepted, "Conversion added", id, w)
+	writeResult(http.StatusAccepted, "Conversion added", Conversion{ID: id}, w)
 }
 
 // GetConversionsHandler uses BaseAPI for search and list conversions.

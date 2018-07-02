@@ -2,14 +2,14 @@ package version
 
 // Version related constants.
 const (
-	Major = "1"
-	Minor = "2"
-	Fix   = "3"
+	Major = "2"
+	Minor = "0"
+	Fix   = "0"
 )
 
 var (
 	// Version is the current version of Leadschain platform.
-	Version = "1.2.3"
+	Version = "2.0.0"
 
 	// GitCommit is the current HEAD set using ldflags.
 	GitCommit string

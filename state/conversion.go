@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -28,18 +28,19 @@ import (
 //go:generate msgp
 
 // Conversion struct keep conversion related fields.
+//   - AdvertiserData keeps cpa_uid, client_id, goal_id, comment and some other relevant to postback private data.
+//     Encrypted by affiliate's public key.
+//   - PublicData keeps offer_id, stream_id, advertiser_account_id and affiliate's public key
+//     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash,
+//     represented as base64 string.
+//   - Status may be one of PENDING, APPROVED, DECLINED.
 type Conversion struct {
-	ID                  string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	AdvertiserAccountID string  `msg:"advertiser_account_id" json:"advertiser_account_id" mapstructure:"advertiser_account_id" bson:"advertiser_account_id"`
-	AffiliateAccountID  string  `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
-	ClickID             string  `msg:"click_id" json:"click_id" mapstructure:"click_id" bson:"click_id"`
-	StreamID            string  `msg:"stream_id" json:"stream_id" mapstructure:"stream_id" bson:"stream_id"`
-	OfferID             string  `msg:"offer_id" json:"offer_id" mapstructure:"offer_id" bson:"offer_id"`
-	ClientID            string  `msg:"client_id" json:"client_id" mapstructure:"client_id" bson:"client_id"`
-	GoalID              string  `msg:"goal_id" json:"goal_id" mapstructure:"goal_id" bson:"goal_id"`
-	CreatedAt           float64 `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
-	Comment             string  `msg:"comment" json:"comment" mapstructure:"comment" bson:"comment"`
-	Status              string  `msg:"status" json:"status" mapstructure:"status" bson:"status"`
+	ID                 string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
+	AffiliateAccountID string  `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
+	AdvertiserData     string  `msg:"advertiser_data" json:"advertiser_data" mapstructure:"advertiser_data" bson:"advertiser_data"`
+	PublicData         string  `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
+	CreatedAt          float64 `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
+	Status             string  `msg:"status" json:"status" mapstructure:"status" bson:"status"`
 }
 
 const conversionsCollection = "conversions"

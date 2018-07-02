@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -37,7 +37,7 @@ func checkConversionAddTransaction(tx *transaction.Transaction, s *state.State) 
 	if s.HasConversion(data.ID) {
 		return errors.New("Conversion exists")
 	}
-	k, err := s.GetAccountPubKey(data.AdvertiserAccountID)
+	k, err := s.GetAccountPubKey(tx.Signer)
 	if err != nil {
 		return errors.New("Pubkey can't be loaded: " + err.Error())
 	}

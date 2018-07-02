@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,7 +22,10 @@
 package client
 
 import (
+	"encoding/base64"
 	"time"
+
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/leadschain/leadschain/crypto"
@@ -54,7 +57,7 @@ type TransitionAPI interface {
 
 // ConversionAPI interface provides all conversion related methods
 type ConversionAPI interface {
-	AddConversion(affiliateID, advertiserID, clickID, streamID, clientID, goalID, offerID, status, comment string) (ID string, err error)
+	AddConversion(affiliateID string, advertiserData, publicData []byte, status string) (ID string, err error)
 	GetConversion(ID string) (*state.Conversion, error)
 	ListConversions() ([]state.Conversion, error)
 	SearchConversions(query []byte) ([]state.Conversion, error)
@@ -129,22 +132,41 @@ func (api *apiClient) SearchTransitions(query []byte) ([]state.Transition, error
 	return api.base.SearchTransitions(query)
 }
 
-func (api *apiClient) AddConversion(affiliateID, advertiserID, clickID, streamID, clientID, goalID, offerID, status, comment string) (ID string, err error) {
+func (api *apiClient) AddConversion(affiliateID string, advertiserData, publicData []byte, status string) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
 	now := time.Now()
 	createdAt := now.UTC().UnixNano()
-	if err := api.fast.AddConversion(&state.Conversion{
-		ID:                  id,
-		AdvertiserAccountID: advertiserID,
-		AffiliateAccountID:  affiliateID,
-		ClickID:             clickID,
-		StreamID:            streamID,
-		ClientID:            clientID,
-		OfferID:             offerID,
-		GoalID:              goalID,
-		CreatedAt:           float64(createdAt),
-		Status:              status,
-		Comment:             comment,
+
+	// Get affiliate's public key
+	affiliate, err := api.GetAccount(affiliateID)
+	if err != nil {
+		return "", err
+	}
+
+	// ECDH encrypted advertiser's data with public key of affiliate
+	affiliatePubKey, err := crypto.NewFromStrings(affiliate.PubKey, "")
+	if err != nil {
+		return "", err
+	}
+	advertiserDataEnc, err := affiliatePubKey.Encrypt(advertiserData)
+	if err != nil {
+		return "", err
+	}
+
+	// BLAKE2B 256-bit hashed public data, represented as base64 string
+	blake2BHash, _ := blake2b.New256(nil)
+	_, err = blake2BHash.Write(publicData)
+	if err != nil {
+		return "", err
+	}
+	publicDataHashed := base64.StdEncoding.EncodeToString(blake2BHash.Sum(nil))
+
+	if err = api.fast.AddConversion(&state.Conversion{
+		ID:             id,
+		AdvertiserData: string(advertiserDataEnc),
+		PublicData:     publicDataHashed,
+		CreatedAt:      float64(createdAt),
+		Status:         status,
 	}); err != nil {
 		return "", err
 	}
