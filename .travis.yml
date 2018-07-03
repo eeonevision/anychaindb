@@ -35,37 +35,34 @@ before_install:
 
 jobs:
   include:
-  - stage: build
+  - stage: build && test
     before_script:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
-    # check builds
+    # make images
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
       fi
-  - stage: run
-    before_script:
-    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
-    script:
+    # run images
     - docker run -d -p ${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
     - docker run -d -p ${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
     - docker run -d -p ${P2P_PORT}:${P2P_PORT} -p ${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
-    - docker run -d -p ${NODE_PORT}:${NODE_PORT} --name leadschain-node leadschain/node /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
-  - stage: test
-    before_script:
-    - cd ${TRAVIS_BUILD_DIR}
-    script:
-    - cd api/tests
-    - go test -v handler_test.go -args -host=${HOST}-update=true
+    - docker run -d -p ${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
+    # test api
+    - cd ${TRAVIS_BUILD_DIR}/api/tests
+    - go test -v handler_test.go -args -host=${HOST} -update=true
+    # test crypto
+    - cd ${TRAVIS_BUILD_DIR}/crypto/tests
+    - go test -v key_test.go -args -msg='test message!' -update=true
   - stage: deploy to dockerhub
     before_script:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     script:
     - if [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
-          make login push;
+          make login build push;
       elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-          make login push_develop;
+          make login build_develop push_develop;
       fi
 
