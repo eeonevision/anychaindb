@@ -47,14 +47,19 @@ jobs:
           make build_develop;
           TAG="develop";
       fi
-    # run images
-    - docker run --net=host -d -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
+    # create images
+    - docker create --net=host -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
+    - docker create --net=host -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:$TAG /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
+    - docker create --net=host -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${HOST}:${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:$TAG /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
+    - docker create --net=host -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:$TAG /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
+    # start images
+    - docker start leadschain-mongodb
     - sleep 15
-    - docker run --net=host -d -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:$TAG /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
+    - docker start leadschain-abci
     - sleep 15
-    - docker run --net=host -d -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${HOST}:${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:$TAG /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
+    - docker start leadschain-node
     - sleep 15
-    - docker run --net=host -d -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:$TAG /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
+    - docker start leadschain-api
     - sleep 15
     - echo $(docker ps -a)
     # test api
