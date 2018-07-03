@@ -42,14 +42,14 @@ jobs:
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
-          bash deploy.sh --type=node --node_ip=127.0.0.1;
+          bash deploy.sh --type=node --node_ip=${NODE_IP};
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
-          bash deploy.sh --type=node-develop --node_ip=127.0.0.1;
+          bash deploy.sh --type=node-develop --node_ip=${NODE_IP};
       fi
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
-    - go test -v handler_test.go -args -host=${HOST} -update=true
+    - go test -v handler_test.go -args -host=${NODE_IP} -update=true
     # test crypto
     - cd ${TRAVIS_BUILD_DIR}/crypto/tests
     - go test -v key_test.go -args -msg='test message!' -update=true
