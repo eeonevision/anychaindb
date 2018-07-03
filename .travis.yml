@@ -45,7 +45,7 @@ jobs:
           make build;
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
-          TAG="develop"
+          TAG="develop";
       fi
     # run images
     - docker run -d -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
