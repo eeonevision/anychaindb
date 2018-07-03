@@ -55,16 +55,16 @@ func NewFromStrings(pub, priv string) (*Key, error) {
 
 func (k *Key) GetPubString() string {
 	pub := elliptic.Marshal(elliptic.P256(), k.pub.X, k.pub.Y)
-	return base64.URLEncoding.EncodeToString(pub)
+	return base64.StdEncoding.EncodeToString(pub)
 }
 
 func (k *Key) GetPrivString() string {
 	priv := k.priv.D.Bytes()
-	return base64.URLEncoding.EncodeToString(priv)
+	return base64.StdEncoding.EncodeToString(priv)
 }
 
 func (k *Key) SetPubString(pub string) error {
-	bs, err := base64.URLEncoding.DecodeString(pub)
+	bs, err := base64.StdEncoding.DecodeString(pub)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (k *Key) SetPubString(pub string) error {
 }
 
 func (k *Key) SetPrivString(priv string) error {
-	bs, err := base64.URLEncoding.DecodeString(priv)
+	bs, err := base64.StdEncoding.DecodeString(priv)
 	if err != nil {
 		return err
 	}
@@ -90,8 +90,8 @@ func (k *Key) Sign(hash []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rStr := base64.URLEncoding.EncodeToString(r.Bytes())
-	sStr := base64.URLEncoding.EncodeToString(s.Bytes())
+	rStr := base64.StdEncoding.EncodeToString(r.Bytes())
+	sStr := base64.StdEncoding.EncodeToString(s.Bytes())
 	return rStr + ":" + sStr, nil
 }
 
@@ -100,11 +100,11 @@ func (k *Key) Verify(hash []byte, signature string) error {
 	if len(parts) != 2 {
 		return errors.New("Malformed signature")
 	}
-	rBytes, err := base64.URLEncoding.DecodeString(parts[0])
+	rBytes, err := base64.StdEncoding.DecodeString(parts[0])
 	if err != nil {
 		return err
 	}
-	sBytes, err := base64.URLEncoding.DecodeString(parts[1])
+	sBytes, err := base64.StdEncoding.DecodeString(parts[1])
 	if err != nil {
 		return err
 	}

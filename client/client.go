@@ -160,13 +160,11 @@ func (api *apiClient) AddConversion(affiliateID string, advertiserData, publicDa
 		return "", err
 	}
 
-	// base64 URL encoded string followed by:
-	// https://tools.ietf.org/html/rfc4648#section-5
 	if err = api.fast.AddConversion(&state.Conversion{
 		ID:                 id,
 		AffiliateAccountID: affiliateID,
-		AdvertiserData:     base64.URLEncoding.EncodeToString(advertiserDataEnc),
-		PublicData:         base64.URLEncoding.EncodeToString(blake2BHash.Sum(nil)),
+		AdvertiserData:     base64.StdEncoding.EncodeToString(advertiserDataEnc),
+		PublicData:         base64.StdEncoding.EncodeToString(blake2BHash.Sum(nil)),
 		CreatedAt:          float64(createdAt),
 		Status:             status,
 	}); err != nil {
