@@ -15,7 +15,7 @@ services:
   - docker
 
 env: 
-  - DOCKER_COMPOSE_VERSION=1.21.0 HOST=127.0.0.1 DB_PORT=27017 ABCI_PORT=46658 P2P_PORT=46656 GRPC_PORT=46657 REST_PORT=8889
+  - DOCKER_COMPOSE_VERSION=1.21.0 NODE_IP=127.0.0.1 DB_PORT=27017 ABCI_PORT=46658 P2P_PORT=46656 GRPC_PORT=46657 REST_PORT=8889
 
 before_install:
   # update docker
@@ -40,29 +40,13 @@ jobs:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     # make and run images
     script:
-    - TAG="latest"
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
+          docker-compose -f leadschain.yaml up -d;
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
-          TAG="develop";
+          docker-compose -f leadschain-develop.yaml up -d;
       fi
-    # create images
-    - docker create -it -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/sh -c "mongod --bind_ip_all --quiet"
-    - docker create -it -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:$TAG /bin/sh -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
-    - docker create -it -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${HOST}:${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:$TAG /bin/sh -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
-    - docker create -it -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:$TAG /bin/sh -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
-    # start images
-    - docker start leadschain-mongodb
-    - sleep 15
-    - docker start leadschain-abci
-    - docker start leadschain-node
-    - docker start leadschain-api
-    - sleep 15
-    - docker logs leadschain-mongodb
-    - docker logs leadschain-abci
-    - docker logs leadschain-node
-    - docker logs leadschain-api
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
     - go test -v handler_test.go -args -host=${HOST} -update=true
