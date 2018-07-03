@@ -56,12 +56,13 @@ jobs:
     - docker start leadschain-mongodb
     - sleep 15
     - docker start leadschain-abci
-    - sleep 15
     - docker start leadschain-node
-    - sleep 15
     - docker start leadschain-api
     - sleep 15
-    - echo $(docker logs)
+    - echo $(docker logs leadschain-mongodb)
+    - echo $(docker logs leadschain-abci)
+    - echo $(docker logs leadschain-node)
+    - echo $(docker logs leadschain-api)
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
     - go test -v handler_test.go -args -host=${HOST} -update=true
