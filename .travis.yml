@@ -35,20 +35,20 @@ jobs:
     before_script:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     script:
-    - if [ "$TRAVIS_BRANCH" == "master" ] || [ $TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then
-          sh deploy.sh --type=node --node_ip=localhost;
+    - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then
+          sh deploy.sh --type=node --node_ip=127.0.0.1;
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
-          sh deploy.sh --type=node-dev --node_ip=localhost;
+          sh deploy.sh --type=node-dev --node_ip=127.0.0.1;
       fi
   - stage: test
     before_script:
     - cd ${TRAVIS_BUILD_DIR}
     script:
     - cd api/tests
-    - go test -v handler_test.go -args -host=localhost -update=true
+    - go test -v handler_test.go -args -host=127.0.0.1 -update=true
 
           
-  - stage: deploy docker to hub
+  - stage: deploy to dockerhub
     before_script:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     script:
