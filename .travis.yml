@@ -40,19 +40,18 @@ jobs:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     # make and run images
     script:
+    - TAG="latest"
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
-          make build && \
-          docker run -d -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet" && \
-          docker run -d -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:latest /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error" && \
-          docker run -d -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:latest /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}" && \
-          docker run -d -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:latest /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error";
+          make build;
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
-          make build_develop && \
-          docker run -d -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet" && \
-          docker run -d -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:develop /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error" && \
-          docker run -d -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:develop /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}" && \
-          docker run -d -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:develop /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error";
+          make build_develop;
+          TAG="develop"
       fi
+    # run images
+    - docker run -d -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
+    - docker run -d -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:$TAG /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
+    - docker run -d -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:$TAG /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
+    - docker run -d -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:$TAG /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
     - go test -v handler_test.go -args -host=${HOST} -update=true
