@@ -42,10 +42,10 @@ jobs:
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
-          sh deploy.sh --type=node --node_ip=${NODE_IP};
+          bash deploy.sh --type=node --node_ip=${NODE_IP};
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
-          sh deploy.sh --type=node-develop --node_ip=${NODE_IP};
+          bash deploy.sh --type=node-develop --node_ip=${NODE_IP};
       fi
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
