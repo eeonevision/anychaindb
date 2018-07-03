@@ -15,7 +15,7 @@ services:
   - docker
 
 env: 
-  - DOCKER_COMPOSE_VERSION=1.21.0 NODE_IP=127.0.0.1 DB_PORT=27017 ABCI_PORT=46658 P2P_PORT=46656 GRPC_PORT=46657 REST_PORT=8889
+  - DOCKER_COMPOSE_VERSION=1.21.0 NODE_IP=127.0.0.1
 
 before_install:
   # update docker
@@ -42,10 +42,10 @@ jobs:
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
-          docker-compose -f leadschain.yaml up -d;
+          sh deploy.sh --type=node --node_ip=${NODE_IP};
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
-          docker-compose -f leadschain-develop.yaml up -d;
+          sh deploy.sh --type=node-develop --node_ip=${NODE_IP};
       fi
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests

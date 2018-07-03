@@ -90,23 +90,23 @@ if [ "$type" = "node" ]; then
     clean
     echo "[RELEASE] Deploying Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
-    docker-compose -f leadschain.yaml up
+    docker-compose -f leadschain.yaml up -d
 elif [ "$type" = "node-dev" ]; then
     prepare
     clean
     echo "[DEVELOP] Deploying Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
-    docker-compose -f leadschain-develop.yaml up
+    docker-compose -f leadschain-develop.yaml up -d
 elif [ "$type" = "clean" ]; then
     clean
 elif [ "$type" = "update" ]; then
     clean
     echo "[RELEASE] Starting Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
-    docker-compose -f leadschain.yaml up
+    docker-compose -f leadschain.yaml up -d
 elif [ "$type" = "update-dev" ]; then
     clean
     echo "[DEVELOP] Starting Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
-    docker-compose -f leadschain-develop.yaml up
+    docker-compose -f leadschain-develop.yaml up -d
 fi
