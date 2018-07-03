@@ -45,7 +45,7 @@ jobs:
           bash deploy.sh --type=node --node_ip=${NODE_IP};
       elif [ "$TRAVIS_BRANCH" == "develop" ]; then
           make build_develop;
-          bash deploy.sh --type=node-develop --node_ip=${NODE_IP};
+          bash deploy.sh --type=node-dev --node_ip=${NODE_IP};
       fi
     - sleep 15;
     - docker logs leadschain-mongodb
