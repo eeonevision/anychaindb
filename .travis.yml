@@ -48,10 +48,10 @@ jobs:
           TAG="develop";
       fi
     # create images
-    - docker create --net=host -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
-    - docker create --net=host -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:$TAG /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
-    - docker create --net=host -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${HOST}:${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:$TAG /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
-    - docker create --net=host -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:$TAG /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
+    - docker create -it -p ${HOST}:${DB_PORT}:${DB_PORT} --name leadschain-mongodb mongo:latest /bin/bash -c "mongod --bind_ip_all --quiet"
+    - docker create -it -p ${HOST}:${ABCI_PORT}:${ABCI_PORT} --name leadschain-abci leadschain/abci:$TAG /bin/bash -c "tmlc-abci --dbhost=mongodb://${HOST}:${DB_PORT} --addr=tcp://${HOST}:${ABCI_PORT} --loglevel=*:error"
+    - docker create -it -p ${HOST}:${P2P_PORT}:${P2P_PORT} -p ${HOST}:${GRPC_PORT}:${GRPC_PORT} --name leadschain-node leadschain/node:$TAG /bin/bash -c "tendermint init && tendermint node --proxy_app=tcp://${HOST}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT}"
+    - docker create -it -p ${HOST}:${REST_PORT}:${REST_PORT} --name leadschain-api leadschain/api:$TAG /bin/bash -c "tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error"
     # start images
     - docker start leadschain-mongodb
     - sleep 15
@@ -61,7 +61,7 @@ jobs:
     - sleep 15
     - docker start leadschain-api
     - sleep 15
-    - echo $(docker ps -a)
+    - echo $(docker logs)
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
     - go test -v handler_test.go -args -host=${HOST} -update=true
