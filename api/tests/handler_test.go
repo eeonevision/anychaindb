@@ -51,8 +51,8 @@ func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
 		return nil, err
 	}
 	// Check response status code
-	if respRaw.StatusCode != 202 {
-		return contents, fmt.Errorf("status code is not 202 Accepted: %v", respRaw.StatusCode)
+	if respRaw.StatusCode != http.StatusAccepted {
+		return contents, fmt.Errorf("status code is not '202 Accepted': %v", respRaw.StatusCode)
 	}
 	return contents, nil
 }
@@ -68,8 +68,8 @@ func doGETRequest(endpoint, url string) ([]byte, error) {
 		return nil, err
 	}
 	// Check response status code
-	if respRaw.StatusCode != 200 {
-		return contents, fmt.Errorf("status code is not 200 OK: %v", respRaw.StatusCode)
+	if respRaw.StatusCode != http.StatusOK {
+		return contents, fmt.Errorf("status code is not '200 OK': %v", respRaw.StatusCode)
 	}
 	return contents, nil
 }
@@ -81,7 +81,7 @@ func TestCreateAccount(t *testing.T) {
 	data, _ := json.Marshal(handler.Request{})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
-		t.Errorf("error in sending POST request: %s, %s", contents, err)
+		t.Errorf("error in sending POST request: %s", contents)
 		return
 	}
 	// Check data in results
@@ -142,7 +142,7 @@ func TestGetAccount(t *testing.T) {
 	// Find account in Leadschain server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
-		t.Errorf("error in sending GET request: %s, %s", contents, err)
+		t.Errorf("error in sending GET request: %s", contents)
 		return
 	}
 	resp := handler.Result{}
@@ -192,7 +192,7 @@ func TestCreateConversion(t *testing.T) {
 		}})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
-		t.Errorf("error in sending POST request: %s, %s", contents, err)
+		t.Errorf("error in sending POST request: %s", contents)
 		return
 	}
 	// Check data in results
@@ -224,7 +224,7 @@ func TestCreateConversion(t *testing.T) {
 			return
 		}
 		// Wait for transaction approve
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 10)
 	}
 }
 
@@ -253,7 +253,7 @@ func TestGetConversion(t *testing.T) {
 	// Find conversion in Leadschain server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
-		t.Errorf("error in sending GET request: %s, %s", contents, err)
+		t.Errorf("error in sending GET request: %s", contents)
 		return
 	}
 	resp := handler.Result{}
