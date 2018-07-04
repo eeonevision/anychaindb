@@ -45,7 +45,18 @@ type Conversion struct {
 	CreatedAt          float64     `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
 }
 
-// PostConversionsHandler uses FastAPI for sends new conversions requests in async mode to blockchain
+// Metadata struct keep information about requester remote address.
+type Metadata struct {
+	RemoteAddr string `msg:"remote_addr" json:"remote_addr" mapstructure:"remote_addr" bson:"remote_addr"`
+}
+
+// PrivateDataWrapper structs wraps private data from requester with metadata.
+type PrivateDataWrapper struct {
+	PrivateData interface{} `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
+	*Metadata   `msg:"metadata" json:"metadata" mapstructure:"metadata" bson:"metadata"`
+}
+
+// PostConversionsHandler uses FastAPI for sends new conversions requests in async mode to blockchain.
 func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -72,7 +83,14 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	advMrsh, err := json.Marshal(data.PrivateData)
+	privMrsh, err := json.Marshal(
+		PrivateDataWrapper{
+			PrivateData: data.PrivateData,
+			Metadata: &Metadata{
+				RemoteAddr: r.RemoteAddr,
+			},
+		},
+	)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
@@ -83,7 +101,7 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 
-	id, err := api.AddConversion(data.AffiliateAccountID, advMrsh, pubMrsh)
+	id, err := api.AddConversion(data.AffiliateAccountID, privMrsh, pubMrsh)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
