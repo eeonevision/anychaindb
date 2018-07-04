@@ -33,18 +33,16 @@ import (
 )
 
 // Conversion struct describes conversion related fields
-//   - AdvertiserData keeps cpa_uid, client_id, goal_id, comment and some other relevant to postback private data.
+//   - PrivateData keeps cpa_uid, client_id, goal_id, comment, status and some other relevant to postback private data.
 //     Encrypted by affiliate's public key by ECDH algorithm and represented as base64 string.
-//   - PublicData keeps offer_id, stream_id, advertiser_account_id and affiliate's public key
+//   - PublicData keeps offer_id, stream_id, status, advertiser_account_id and affiliate's public key
 //     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash.
-//   - Status may be one of PENDING, APPROVED, DECLINED.
 type Conversion struct {
 	ID                 string      `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
 	AffiliateAccountID string      `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
-	AdvertiserData     interface{} `msg:"advertiser_data" json:"advertiser_data" mapstructure:"advertiser_data" bson:"advertiser_data"`
+	PrivateData        interface{} `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
 	PublicData         interface{} `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
 	CreatedAt          float64     `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
-	Status             string      `msg:"status" json:"status" mapstructure:"status" bson:"status"`
 }
 
 // PostConversionsHandler uses FastAPI for sends new conversions requests in async mode to blockchain
@@ -74,7 +72,7 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	advMrsh, err := json.Marshal(data.AdvertiserData)
+	advMrsh, err := json.Marshal(data.PrivateData)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
@@ -85,7 +83,7 @@ func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter
 		return
 	}
 
-	id, err := api.AddConversion(data.AffiliateAccountID, advMrsh, pubMrsh, data.Status)
+	id, err := api.AddConversion(data.AffiliateAccountID, advMrsh, pubMrsh)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return

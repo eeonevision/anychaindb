@@ -41,9 +41,6 @@ func checkConversionAddTransaction(tx *transaction.Transaction, s *state.State) 
 	if err != nil {
 		return errors.New("Pubkey can't be loaded: " + err.Error())
 	}
-	if data.Status == "" {
-		return errors.New("Conversion status can't be empty")
-	}
 	if err := tx.Verify(k); err != nil {
 		return errors.New("TX can't be verified: " + err.Error())
 	}

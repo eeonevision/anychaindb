@@ -57,7 +57,7 @@ type TransitionAPI interface {
 
 // ConversionAPI interface provides all conversion related methods
 type ConversionAPI interface {
-	AddConversion(affiliateID string, advertiserData, publicData []byte, status string) (ID string, err error)
+	AddConversion(affiliateID string, privateData, publicData []byte) (ID string, err error)
 	GetConversion(ID string) (*state.Conversion, error)
 	ListConversions() ([]state.Conversion, error)
 	SearchConversions(query []byte) ([]state.Conversion, error)
@@ -132,7 +132,7 @@ func (api *apiClient) SearchTransitions(query []byte) ([]state.Transition, error
 	return api.base.SearchTransitions(query)
 }
 
-func (api *apiClient) AddConversion(affiliateID string, advertiserData, publicData []byte, status string) (ID string, err error) {
+func (api *apiClient) AddConversion(affiliateID string, privateData, publicData []byte) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
 	now := time.Now()
 	createdAt := now.UTC().UnixNano()
@@ -148,7 +148,7 @@ func (api *apiClient) AddConversion(affiliateID string, advertiserData, publicDa
 	if err != nil {
 		return "", err
 	}
-	advertiserDataEnc, err := affiliatePubKey.Encrypt(advertiserData)
+	privateDataEnc, err := affiliatePubKey.Encrypt(privateData)
 	if err != nil {
 		return "", err
 	}
@@ -163,10 +163,9 @@ func (api *apiClient) AddConversion(affiliateID string, advertiserData, publicDa
 	if err = api.fast.AddConversion(&state.Conversion{
 		ID:                 id,
 		AffiliateAccountID: affiliateID,
-		AdvertiserData:     base64.StdEncoding.EncodeToString(advertiserDataEnc),
+		PrivateData:        base64.StdEncoding.EncodeToString(privateDataEnc),
 		PublicData:         base64.StdEncoding.EncodeToString(blake2BHash.Sum(nil)),
 		CreatedAt:          float64(createdAt),
-		Status:             status,
 	}); err != nil {
 		return "", err
 	}

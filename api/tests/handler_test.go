@@ -179,9 +179,8 @@ func TestCreateConversion(t *testing.T) {
 		PubKey:    acc1.Pub,
 		Data: handler.Conversion{
 			AffiliateAccountID: acc1.ID,
-			AdvertiserData:     "test_data",
+			PrivateData:        "test_data",
 			PublicData:         "test_public_data",
-			Status:             "ACCEPTED",
 		}})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
