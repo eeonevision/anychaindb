@@ -22,7 +22,7 @@ case $i in
         shift
     ;;
     --clean_all=*)
-        type="${i#*=}"
+        clean_all="${i#*=}"
         shift
     ;;
     --node_ip=*)
