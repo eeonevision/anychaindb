@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
-
-func _fmt(f string, az ...interface{}) string {
-	return fmt.Sprintf(f, az...)
-}
 
 //----------------------------------------
 // debugDB

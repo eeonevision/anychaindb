@@ -5,7 +5,8 @@ push:
 	@sh -c "'$(CURDIR)/push.sh'"
 
 build_develop:
-	@docker build -t "leadschain/node:develop" -f dockerfiles/develop/leadschain-node-develop.Dockerfile .
+	# node:develop image uses latest tendermint release in master branch
+	@docker build -t "leadschain/node:develop" -f dockerfiles/develop/leadschain-node.Dockerfile .
 	@docker build -t "leadschain/abci:develop" -f dockerfiles/develop/leadschain-abci-develop.Dockerfile .
 	@docker build -t "leadschain/api:develop" -f dockerfiles/develop/leadschain-rest-api-develop.Dockerfile .
 

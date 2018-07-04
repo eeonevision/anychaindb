@@ -5,10 +5,12 @@ import (
 	"fmt"
 )
 
+// SimpleProof represents a simple merkle proof.
 type SimpleProof struct {
 	Aunts [][]byte `json:"aunts"` // Hashes from leaf's sibling to a root's child.
 }
 
+// SimpleProofsFromHashers computes inclusion proof for given items.
 // proofs[0] is the proof for items[0].
 func SimpleProofsFromHashers(items []Hasher) (rootHash []byte, proofs []*SimpleProof) {
 	trails, rootSPN := trailsFromHashers(items)
@@ -22,8 +24,11 @@ func SimpleProofsFromHashers(items []Hasher) (rootHash []byte, proofs []*SimpleP
 	return
 }
 
-func SimpleProofsFromMap(m map[string]Hasher) (rootHash []byte, proofs []*SimpleProof) {
-	sm := NewSimpleMap()
+// SimpleProofsFromMap generates proofs from a map. The keys/values of the map will be used as the keys/values
+// in the underlying key-value pairs.
+// The keys are sorted before the proofs are computed.
+func SimpleProofsFromMap(m map[string]Hasher) (rootHash []byte, proofs map[string]*SimpleProof, keys []string) {
+	sm := newSimpleMap()
 	for k, v := range m {
 		sm.Set(k, v)
 	}
@@ -33,7 +38,15 @@ func SimpleProofsFromMap(m map[string]Hasher) (rootHash []byte, proofs []*Simple
 	for _, kvp := range kvs {
 		kvsH = append(kvsH, KVPair(kvp))
 	}
-	return SimpleProofsFromHashers(kvsH)
+
+	rootHash, proofList := SimpleProofsFromHashers(kvsH)
+	proofs = make(map[string]*SimpleProof)
+	keys = make([]string, len(proofList))
+	for i, kvp := range kvs {
+		proofs[string(kvp.Key)] = proofList[i]
+		keys[i] = string(kvp.Key)
+	}
+	return
 }
 
 // Verify that leafHash is a leaf hash of the simple-merkle-tree
@@ -43,10 +56,13 @@ func (sp *SimpleProof) Verify(index int, total int, leafHash []byte, rootHash []
 	return computedHash != nil && bytes.Equal(computedHash, rootHash)
 }
 
+// String implements the stringer interface for SimpleProof.
+// It is a wrapper around StringIndented.
 func (sp *SimpleProof) String() string {
 	return sp.StringIndented("")
 }
 
+// StringIndented generates a canonical string representation of a SimpleProof.
 func (sp *SimpleProof) StringIndented(indent string) string {
 	return fmt.Sprintf(`SimpleProof{
 %s  Aunts: %X
@@ -90,7 +106,7 @@ func computeHashFromAunts(index int, total int, leafHash []byte, innerHashes [][
 	}
 }
 
-// Helper structure to construct merkle proof.
+// SimpleProofNode is a helper structure to construct merkle proof.
 // The node and the tree is thrown away afterwards.
 // Exactly one of node.Left and node.Right is nil, unless node is the root, in which case both are nil.
 // node.Parent.Hash = hash(node.Hash, node.Right.Hash) or
@@ -102,8 +118,8 @@ type SimpleProofNode struct {
 	Right  *SimpleProofNode // Right sibling (only one of Left,Right is set)
 }
 
-// Starting from a leaf SimpleProofNode, FlattenAunts() will return
-// the inner hashes for the item corresponding to the leaf.
+// FlattenAunts will return the inner hashes for the item corresponding to the leaf,
+// starting from a leaf SimpleProofNode.
 func (spn *SimpleProofNode) FlattenAunts() [][]byte {
 	// Nonrecursive impl.
 	innerHashes := [][]byte{}

@@ -1,47 +1,48 @@
 package merkle
 
 import (
-	cmn "github.com/tendermint/tmlibs/common"
-	"github.com/tendermint/tmlibs/merkle/tmhash"
+	"github.com/tendermint/tendermint/crypto/tmhash"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
-type SimpleMap struct {
+// Merkle tree from a map.
+// Leaves are `hash(key) | hash(value)`.
+// Leaves are sorted before Merkle hashing.
+type simpleMap struct {
 	kvs    cmn.KVPairs
 	sorted bool
 }
 
-func NewSimpleMap() *SimpleMap {
-	return &SimpleMap{
+func newSimpleMap() *simpleMap {
+	return &simpleMap{
 		kvs:    nil,
 		sorted: false,
 	}
 }
 
-func (sm *SimpleMap) Set(key string, value Hasher) {
+// Set hashes the key and value and appends it to the kv pairs.
+func (sm *simpleMap) Set(key string, value Hasher) {
 	sm.sorted = false
 
-	// Hash the key to blind it... why not?
-	khash := SimpleHashFromBytes([]byte(key))
-
-	// And the value is hashed too, so you can
+	// The value is hashed, so you can
 	// check for equality with a cached value (say)
 	// and make a determination to fetch or not.
 	vhash := value.Hash()
 
 	sm.kvs = append(sm.kvs, cmn.KVPair{
-		Key:   khash,
+		Key:   []byte(key),
 		Value: vhash,
 	})
 }
 
-// Merkle root hash of items sorted by key
+// Hash Merkle root hash of items sorted by key
 // (UNSTABLE: and by value too if duplicate key).
-func (sm *SimpleMap) Hash() []byte {
+func (sm *simpleMap) Hash() []byte {
 	sm.Sort()
 	return hashKVPairs(sm.kvs)
 }
 
-func (sm *SimpleMap) Sort() {
+func (sm *simpleMap) Sort() {
 	if sm.sorted {
 		return
 	}
@@ -50,7 +51,8 @@ func (sm *SimpleMap) Sort() {
 }
 
 // Returns a copy of sorted KVPairs.
-func (sm *SimpleMap) KVPairs() cmn.KVPairs {
+// NOTE these contain the hashed key and value.
+func (sm *simpleMap) KVPairs() cmn.KVPairs {
 	sm.Sort()
 	kvs := make(cmn.KVPairs, len(sm.kvs))
 	copy(kvs, sm.kvs)
@@ -60,6 +62,8 @@ func (sm *SimpleMap) KVPairs() cmn.KVPairs {
 //----------------------------------------
 
 // A local extension to KVPair that can be hashed.
+// Key and value are length prefixed and concatenated,
+// then hashed.
 type KVPair cmn.KVPair
 
 func (kv KVPair) Hash() []byte {
@@ -76,9 +80,9 @@ func (kv KVPair) Hash() []byte {
 }
 
 func hashKVPairs(kvs cmn.KVPairs) []byte {
-	kvsH := make([]Hasher, 0, len(kvs))
-	for _, kvp := range kvs {
-		kvsH = append(kvsH, KVPair(kvp))
+	kvsH := make([]Hasher, len(kvs))
+	for i, kvp := range kvs {
+		kvsH[i] = KVPair(kvp)
 	}
 	return SimpleHashFromHashers(kvsH)
 }
