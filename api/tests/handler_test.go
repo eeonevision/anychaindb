@@ -224,7 +224,7 @@ func TestCreateConversion(t *testing.T) {
 			return
 		}
 		// Wait for transaction approve
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 5)
 	}
 }
 

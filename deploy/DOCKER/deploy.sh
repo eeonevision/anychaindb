@@ -2,6 +2,7 @@
 
 # default values for environment variables
 type=""
+clean_all=true
 export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 export DATA_ROOT="$HOME/leadschain"
 export CONFIG_PATH="$DATA_ROOT/config"
@@ -17,6 +18,10 @@ for i in "$@"
 do
 case $i in
     --type=*)
+        type="${i#*=}"
+        shift
+    ;;
+    --clean_all=*)
         type="${i#*=}"
         shift
     ;;
@@ -84,28 +89,27 @@ clean () {
     docker system prune -f
 }
 
+# check for starting clean process
+if [ "$clean_all" = true ]; then
+    clean
+fi
+
 # check conditions
 if [ "$type" = "node" ]; then
     prepare
-    clean
     echo "[RELEASE] Deploying Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
     docker-compose -f leadschain.yaml up -d
 elif [ "$type" = "node-dev" ]; then
     prepare
-    clean
     echo "[DEVELOP] Deploying Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
     docker-compose -f leadschain-develop.yaml up -d
-elif [ "$type" = "clean" ]; then
-    clean
 elif [ "$type" = "update" ]; then
-    clean
     echo "[RELEASE] Starting Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
     docker-compose -f leadschain.yaml up -d
 elif [ "$type" = "update-dev" ]; then
-    clean
     echo "[DEVELOP] Starting Leadschain node..."
     curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
     docker-compose -f leadschain-develop.yaml up -d
