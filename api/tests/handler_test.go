@@ -50,6 +50,10 @@ func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Check response status code
+	if respRaw.StatusCode != 202 {
+		return contents, fmt.Errorf("status code is not 202 Accepted: %v", respRaw.StatusCode)
+	}
 	return contents, nil
 }
 
@@ -63,6 +67,10 @@ func doGETRequest(endpoint, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Check response status code
+	if respRaw.StatusCode != 200 {
+		return contents, fmt.Errorf("status code is not 200 OK: %v", respRaw.StatusCode)
+	}
 	return contents, nil
 }
 
@@ -73,7 +81,7 @@ func TestCreateAccount(t *testing.T) {
 	data, _ := json.Marshal(handler.Request{})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
-		t.Errorf("%s", err)
+		t.Errorf("error in sending POST request: %s, %s", contents, err)
 		return
 	}
 	// Check data in results
@@ -134,7 +142,7 @@ func TestGetAccount(t *testing.T) {
 	// Find account in Leadschain server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
-		t.Errorf("%s", err)
+		t.Errorf("error in sending GET request: %s, %s", contents, err)
 		return
 	}
 	resp := handler.Result{}
@@ -184,7 +192,7 @@ func TestCreateConversion(t *testing.T) {
 		}})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
-		t.Errorf("%s", err)
+		t.Errorf("error in sending POST request: %s, %s", contents, err)
 		return
 	}
 	// Check data in results
@@ -245,7 +253,7 @@ func TestGetConversion(t *testing.T) {
 	// Find conversion in Leadschain server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
-		t.Errorf("%s", err)
+		t.Errorf("error in sending GET request: %s, %s", contents, err)
 		return
 	}
 	resp := handler.Result{}
