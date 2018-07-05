@@ -25,7 +25,7 @@ import (
 	"flag"
 	"os"
 
-	lapi "github.com/leadschain/anychaindb/api"
+	lapi "github.com/eeonevision/anychaindb/api"
 	tmflags "github.com/tendermint/tmlibs/cli/flags"
 	"github.com/tendermint/tmlibs/log"
 )

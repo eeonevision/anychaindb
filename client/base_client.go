@@ -25,9 +25,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/leadschain/anychaindb/crypto"
-	"github.com/leadschain/anychaindb/state"
-	"github.com/leadschain/anychaindb/transaction"
+	"github.com/eeonevision/anychaindb/crypto"
+	"github.com/eeonevision/anychaindb/state"
+	"github.com/eeonevision/anychaindb/transaction"
 	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/types"
 )

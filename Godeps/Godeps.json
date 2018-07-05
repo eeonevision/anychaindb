@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/leadschain/anychaindb",
+	"ImportPath": "github.com/eeonevision/anychaindb",
 	"GoVersion": "go1.10",
 	"GodepVersion": "v79",
 	"Packages": [

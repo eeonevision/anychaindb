@@ -26,10 +26,10 @@ import (
 
 	"github.com/tendermint/tmlibs/log"
 
+	"github.com/eeonevision/anychaindb/state"
+	"github.com/eeonevision/anychaindb/transaction"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/anychaindb/state"
-	"github.com/leadschain/anychaindb/transaction"
 	"github.com/tendermint/abci/types"
 )
 

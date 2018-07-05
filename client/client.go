@@ -25,9 +25,9 @@ import (
 	"encoding/base64"
 	"time"
 
+	"github.com/eeonevision/anychaindb/crypto"
+	"github.com/eeonevision/anychaindb/state"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/anychaindb/crypto"
-	"github.com/leadschain/anychaindb/state"
 )
 
 // API is the high level interface for Anychaindb client applications

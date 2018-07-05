@@ -24,8 +24,8 @@ package app
 import (
 	"errors"
 
-	"github.com/leadschain/anychaindb/state"
-	"github.com/leadschain/anychaindb/transaction"
+	"github.com/eeonevision/anychaindb/state"
+	"github.com/eeonevision/anychaindb/transaction"
 )
 
 func checkPayloadAddTransaction(tx *transaction.Transaction, s *state.State) error {

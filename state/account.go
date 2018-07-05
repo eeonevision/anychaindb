@@ -24,7 +24,7 @@ package state
 import (
 	"errors"
 
-	"github.com/leadschain/anychaindb/crypto"
+	"github.com/eeonevision/anychaindb/crypto"
 )
 
 //go:generate msgp

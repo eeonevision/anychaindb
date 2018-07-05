@@ -1,5 +1,5 @@
 # AnychainDB
-[![Go Report Card](https://goreportcard.com/badge/github.com/leadschain/anychaindb)](https://goreportcard.com/report/github.com/leadschain/anychaindb) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eeonevision/anychaindb)](https://goreportcard.com/report/github.com/eeonevision/anychaindb) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 | Branch  | Tests |
 | ------------- | ------------- |
@@ -63,5 +63,5 @@ Apache 2.0
    [Docker]: <https://www.docker.com/>
    [MsgPack]: <https://msgpack.org/>
    [Golang]: <https://golang.org/>
-   [AnychainDB REST API]: <https://leadschain1.docs.apiary.io/>
+   [AnychainDB REST API]: <https://anychaindb.docs.apiary.io/>
    [Tendermint Docs]: <http://tendermint.readthedocs.io/en/master/introduction.html>

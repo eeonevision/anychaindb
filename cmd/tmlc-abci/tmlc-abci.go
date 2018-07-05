@@ -28,7 +28,7 @@ import (
 	tmflags "github.com/tendermint/tmlibs/cli/flags"
 	"github.com/tendermint/tmlibs/log"
 
-	labci "github.com/leadschain/anychaindb/abci-app"
+	labci "github.com/eeonevision/anychaindb/abci-app"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/common"
 )
