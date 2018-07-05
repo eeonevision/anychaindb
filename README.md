@@ -3,8 +3,8 @@
 
 | Branch  | Tests |
 | ------------- | ------------- |
-| master  | [![Build Status](https://travis-ci.org/anychaindb/anychaindb.svg?branch=master)](https://travis-ci.org/anychaindb/anychaindb)  |
-| develop  | [![Build Status](https://travis-ci.org/anychaindb/anychaindb.svg?branch=develop)](https://travis-ci.org/anychaindb/anychaindb)  |
+| master  | [![Build Status](https://travis-ci.org/eeonevision/anychaindb.svg?branch=master)](https://travis-ci.org/eeonevision/anychaindb)  |
+| develop  | [![Build Status](https://travis-ci.org/eeonevision/anychaindb.svg?branch=develop)](https://travis-ci.org/eeonevision/anychaindb)  |
 
 AnychainDB - secure, fast and open blockchain database.
 AnychainDB uses the modern technologies not only from blockchain world. 

@@ -28,20 +28,20 @@
 # Stage Zero. Build sources
 FROM golang:latest
 
-RUN mkdir -p $GOPATH/src/github.com/anychaindb/anychaindb && \
+RUN mkdir -p $GOPATH/src/github.com/eeonevision/anychaindb && \
 	go get github.com/tools/godep && \
 	go get github.com/tinylib/msgp && \
-    cd $GOPATH/src/github.com/anychaindb/anychaindb && \
-    git clone https://github.com/anychaindb/anychaindb . && \
+    cd $GOPATH/src/github.com/eeonevision/anychaindb && \
+    git clone https://github.com/eeonevision/anychaindb . && \
     git checkout develop && \
-	cd $GOPATH/src/github.com/anychaindb/anychaindb/state && \
+	cd $GOPATH/src/github.com/eeonevision/anychaindb/state && \
 	go generate && \
-	cd $GOPATH/src/github.com/anychaindb/anychaindb/transaction && \
+	cd $GOPATH/src/github.com/eeonevision/anychaindb/transaction && \
 	go generate && \
-	cd $GOPATH/src/github.com/anychaindb/anychaindb && \
+	cd $GOPATH/src/github.com/eeonevision/anychaindb && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 godep go install ./... && \
     cd - && \
-    rm -rf $GOPATH/src/github.com/anychaindb/anychaindb
+    rm -rf $GOPATH/src/github.com/eeonevision/anychaindb
 
 # Stage One. AnychainDB REST API
 FROM alpine:latest
