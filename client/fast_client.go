@@ -77,32 +77,12 @@ func (c *FastClient) AddAccount(acc *state.Account) error {
 	return nil
 }
 
-func (c *FastClient) AddTransition(tr *state.Transition) error {
-	txBytes, err := tr.MarshalMsg(nil)
+func (c *FastClient) AddPayload(data *state.Payload) error {
+	txBytes, err := data.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.TransitionAdd, c.AccountID, txBytes)
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.BroadcastTxAsync(bs)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode != 200 {
-		return fmt.Errorf("%v: %s", res.StatusCode, res.Status)
-	}
-	return nil
-}
-
-func (c *FastClient) AddConversion(cv *state.Conversion) error {
-	txBytes, err := cv.MarshalMsg(nil)
-	if err != nil {
-		return err
-	}
-	tx := transaction.New(transaction.ConversionAdd, c.AccountID, txBytes)
+	tx := transaction.New(transaction.PayloadAdd, c.AccountID, txBytes)
 	if err := tx.Sign(c.Key); err != nil {
 		return err
 	}

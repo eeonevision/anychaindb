@@ -115,6 +115,7 @@ func TestCreateAccount(t *testing.T) {
 		// Wait for transaction approve
 		time.Sleep(time.Second * 5)
 	}
+	t.Logf("Added account: %v", account)
 }
 
 func TestGetAccount(t *testing.T) {
@@ -157,11 +158,12 @@ func TestGetAccount(t *testing.T) {
 		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1.ID, acc2["_id"])
 		return
 	}
+	t.Logf("Got account: %v", acc2)
 }
 
-func TestCreateConversion(t *testing.T) {
+func TestCreatePayload(t *testing.T) {
 	// Generate transaction request
-	endpoint := fmt.Sprintf("/v1/conversions")
+	endpoint := fmt.Sprintf("/v1/payloads")
 	url := *host + ":" + *apiPort
 	// Read account.golden file
 	file, err := ioutil.ReadFile("artifacts/account.golden")
@@ -185,14 +187,14 @@ func TestCreateConversion(t *testing.T) {
 		AccountID: acc1.ID,
 		PrivKey:   acc1.Priv,
 		PubKey:    acc1.Pub,
-		Data: handler.Conversion{
-			AffiliateAccountID: acc1.ID,
-			PrivateData:        "test_data",
-			PublicData:         "test_public_data",
+		Data: handler.Payload{
+			ReceiverAccountID: acc1.ID,
+			PublicData:        "test_public_data",
+			PrivateData:       "test_data",
 		}})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
-		t.Errorf("error in sending POST request: %s", contents)
+		t.Errorf("Error in sending POST request: %s", contents)
 		return
 	}
 	// Check data in results
@@ -204,21 +206,21 @@ func TestCreateConversion(t *testing.T) {
 	}
 	cnv := resp.Data.(map[string]interface{})
 	if cnv["_id"] == "" {
-		t.Errorf("conversion has no id: %s", cnv)
+		t.Errorf("Payload has no id: %s", cnv)
 		return
 	}
-	// Write conversion data to conversion.golden file
+	// Write payload to payload.golden file
 	if *update {
 		// Create folder if not exists
 		_ = os.Mkdir("artifacts", os.ModePerm)
-		// Marshal conversion data to JSON string
+		// Marshal payload to JSON string
 		res, err := json.Marshal(resp.Data)
 		if err != nil {
 			t.Errorf("%s", err)
 			return
 		}
-		// Write account id
-		err = ioutil.WriteFile("artifacts/conversion.golden", res, 0644)
+		// Write payload id
+		err = ioutil.WriteFile("artifacts/payload.golden", res, 0644)
 		if err != nil {
 			t.Errorf("%s", err)
 			return
@@ -226,34 +228,35 @@ func TestCreateConversion(t *testing.T) {
 		// Wait for transaction approve
 		time.Sleep(time.Second * 5)
 	}
+	t.Logf("Added payload: %v", data)
 }
 
-func TestGetConversion(t *testing.T) {
+func TestGetPayload(t *testing.T) {
 	// Generate transaction request
-	endpoint := fmt.Sprintf("/v1/conversions")
+	endpoint := fmt.Sprintf("/v1/payloads")
 	url := *host + ":" + *apiPort
-	// Read conversion.golden file
-	file, err := ioutil.ReadFile("artifacts/conversion.golden")
+	// Read payload.golden file
+	file, err := ioutil.ReadFile("artifacts/payload.golden")
 	if err != nil {
 		t.Errorf("%s", err)
 		return
 	}
-	// Parse conversion.golden file
-	cnv1 := handler.Conversion{}
+	// Parse payload.golden file
+	cnv1 := handler.Payload{}
 	err = json.Unmarshal(file, &cnv1)
 	if err != nil {
 		t.Errorf("%s", err)
 		return
 	}
 	if len(cnv1.ID) == 0 {
-		t.Errorf("conversion.golden is empty: %v", cnv1)
+		t.Errorf("payload.golden is empty: %v", cnv1)
 		return
 	}
 	endpoint = endpoint + "/" + cnv1.ID
-	// Find conversion in Leadschain server
+	// Find payload in Leadschain server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
-		t.Errorf("error in sending GET request: %s", contents)
+		t.Errorf("Error in sending GET request: %s", contents)
 		return
 	}
 	resp := handler.Result{}
@@ -262,10 +265,11 @@ func TestGetConversion(t *testing.T) {
 		t.Errorf("%s", err)
 		return
 	}
-	// Compare conversions
+	// Compare payloads
 	cnv2 := resp.Data.(map[string]interface{})
 	if cnv2["_id"] != cnv1.ID {
-		t.Errorf("conversions are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
+		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
 		return
 	}
+	t.Logf("Got payload: %v", cnv2)
 }

@@ -28,30 +28,30 @@ import (
 	"github.com/leadschain/leadschain/transaction"
 )
 
-func checkConversionAddTransaction(tx *transaction.Transaction, s *state.State) error {
-	data := &state.Conversion{}
+func checkPayloadAddTransaction(tx *transaction.Transaction, s *state.State) error {
+	data := &state.Payload{}
 	_, err := data.UnmarshalMsg(tx.Data)
 	if err != nil {
 		return err
 	}
-	if s.HasConversion(data.ID) {
-		return errors.New("Conversion exists")
+	if s.HasPayload(data.ID) {
+		return errors.New("payload exists")
 	}
 	k, err := s.GetAccountPubKey(tx.Signer)
 	if err != nil {
-		return errors.New("Pubkey can't be loaded: " + err.Error())
+		return errors.New("pubkey can't be loaded: " + err.Error())
 	}
 	if err := tx.Verify(k); err != nil {
-		return errors.New("TX can't be verified: " + err.Error())
+		return errors.New("tx can't be verified: " + err.Error())
 	}
 	return nil
 }
 
-func deliverConversionAddTransaction(tx *transaction.Transaction, s *state.State) error {
-	data := &state.Conversion{}
+func deliverPayloadAddTransaction(tx *transaction.Transaction, s *state.State) error {
+	data := &state.Payload{}
 	_, err := data.UnmarshalMsg(tx.Data)
 	if err != nil {
 		return err
 	}
-	return s.AddConversion(data)
+	return s.AddPayload(data)
 }
