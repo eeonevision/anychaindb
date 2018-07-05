@@ -26,9 +26,10 @@ AnychainDB has two type of nodes:
 - **Non-validator** node keeps the state and sends the transactions to validator nodes. The can be ease connected to the network because this type is not validates transaction.
 
 #### Configure network
-If you want to connect to existing network, then all you need is *genesis.json* and *config.toml* files from the ran network. Place in to config folder and process to the next section.
+If you want to connect to existing network, then all you need is *genesis.json* and *config.toml* files from the ran network. Place in to config folder and follow to the next section. 
+Configure a new network is little more sophisticated. Firstly you need to deploy a validator nodes, then join non-validator nodes to network. About this we will discuss later... (todo)
 
-Configure a new network is little more sophisticated. About this we will discuss later... (todo)
+Examples of network configs placed [here](deploy/DOCKER/examples/schemas).
 #### Deploy network
 Deploy a network with the shell script:
 
@@ -39,7 +40,7 @@ Parameters:
 * **type** - type of job for script. You can choose from *node*, *node-dev*, *update*, *update-dev*, *clean* types
 * **node_ip** - ip address of node. Default script uses `dig` with `OpenDNS` as resolver. *Example: 127.0.0.1*
 * **config** - full path to config folder. *Example: /home/ubuntu/CONFIG_FOLDER*
-* clean_all - clean all cache and reset anychaindb state* *Default: true*
+* clean_all - clean all cache and reset anychaindb state. *Default: true*
 * db_port - port for communication with MongoDB container. *Default: 27017*
 * p2p_port - port for communication between nodes. *Default: 46656*
 * grpc_port - port for RPC client. *Default: 46657*
