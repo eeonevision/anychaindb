@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -21,7 +21,7 @@
 
 package app
 
-// Leadschain response codes
+// Anychaindb response codes
 const (
 	CodeTypeOK                uint32 = 0
 	CodeTypeEncodingError     uint32 = 1

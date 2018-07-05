@@ -9,11 +9,11 @@ import (
 // Get network info.
 //
 // ```shell
-// curl 'localhost:46657/net_info'
+// curl 'localhost:26657/net_info'
 // ```
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // info, err := client.NetInfo()
 // ```
 //
@@ -23,9 +23,10 @@ import (
 // {
 // 	"error": "",
 // 	"result": {
+//		"n_peers": 0,
 // 		"peers": [],
 // 		"listeners": [
-// 			"Listener(@10.0.2.15:46656)"
+// 			"Listener(@10.0.2.15:26656)"
 // 		],
 // 		"listening": true
 // 	},
@@ -47,9 +48,13 @@ func NetInfo() (*ctypes.ResultNetInfo, error) {
 			ConnectionStatus: peer.Status(),
 		})
 	}
+	// TODO: Should we include PersistentPeers and Seeds in here?
+	// PRO: useful info
+	// CON: privacy
 	return &ctypes.ResultNetInfo{
 		Listening: listening,
 		Listeners: listeners,
+		NPeers:    len(peers),
 		Peers:     peers,
 	}, nil
 }
@@ -83,11 +88,11 @@ func UnsafeDialPeers(peers []string, persistent bool) (*ctypes.ResultDialPeers, 
 // Get genesis file.
 //
 // ```shell
-// curl 'localhost:46657/genesis'
+// curl 'localhost:26657/genesis'
 // ```
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // genesis, err := client.Genesis()
 // ```
 //

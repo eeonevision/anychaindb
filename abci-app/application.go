@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -26,10 +26,10 @@ import (
 
 	"github.com/tendermint/tmlibs/log"
 
+	"github.com/eeonevision/anychaindb/state"
+	"github.com/eeonevision/anychaindb/transaction"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/leadschain/state"
-	"github.com/leadschain/leadschain/transaction"
 	"github.com/tendermint/abci/types"
 )
 
@@ -39,7 +39,7 @@ const (
 	resOffset = 0
 )
 
-// Application inherits BaseApplication and keeps state of leadschain
+// Application inherits BaseApplication and keeps state of anychaindb
 type Application struct {
 	types.BaseApplication
 	state  *state.State
@@ -95,18 +95,9 @@ func (app *Application) DeliverTx(txBytes []byte) types.ResponseDeliverTx {
 				}
 			}
 		}
-	case transaction.TransitionAdd:
+	case transaction.PayloadAdd:
 		{
-			if err := deliverTransitionAddTransaction(tx, app.state); err != nil {
-				return types.ResponseDeliverTx{
-					Code: CodeTypeDeliverTxError,
-					Log:  err.Error(),
-				}
-			}
-		}
-	case transaction.ConversionAdd:
-		{
-			if err := deliverConversionAddTransaction(tx, app.state); err != nil {
+			if err := deliverPayloadAddTransaction(tx, app.state); err != nil {
 				return types.ResponseDeliverTx{
 					Code: CodeTypeDeliverTxError,
 					Log:  err.Error(),
@@ -117,7 +108,7 @@ func (app *Application) DeliverTx(txBytes []byte) types.ResponseDeliverTx {
 		{
 			return types.ResponseDeliverTx{
 				Code: CodeTypeUnknownRequest,
-				Log:  "Transaction type was not detected.",
+				Log:  "transaction type was not detected.",
 			}
 		}
 	}
@@ -145,18 +136,9 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx {
 				}
 			}
 		}
-	case transaction.TransitionAdd:
+	case transaction.PayloadAdd:
 		{
-			if err := checkTransitionAddTransaction(tx, app.state); err != nil {
-				return types.ResponseCheckTx{
-					Code: CodeTypeCheckTxError,
-					Log:  err.Error(),
-				}
-			}
-		}
-	case transaction.ConversionAdd:
-		{
-			if err := checkConversionAddTransaction(tx, app.state); err != nil {
+			if err := checkPayloadAddTransaction(tx, app.state); err != nil {
 				return types.ResponseCheckTx{
 					Code: CodeTypeCheckTxError,
 					Log:  err.Error(),
@@ -167,7 +149,7 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx {
 		{
 			return types.ResponseCheckTx{
 				Code: CodeTypeUnknownRequest,
-				Log:  "Transaction type was not detected.",
+				Log:  "transaction type was not detected.",
 			}
 		}
 	}
@@ -230,7 +212,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			)
 			if reqQuery.Data == nil {
 				resQuery.Code = CodeEmptySearchQuery
-				resQuery.Log = "Search query is empty"
+				resQuery.Log = "search query is empty"
 				return
 			}
 			// Unmarshal search query
@@ -257,14 +239,15 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}
-	case "transitions":
+	case "payloads":
 		{
 			var (
 				result interface{}
 				err    error
 			)
 			if reqQuery.Data != nil {
-				result, err = app.state.GetTransition(string(reqQuery.Data))
+				result, err = app.state.GetPayload(string(reqQuery.Data))
+				app.logger.Debug("Got payload: %+v", result)
 			}
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeTypeQueryError
@@ -274,7 +257,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			bs, _ := json.Marshal(result)
 			resQuery.Value = bs
 		}
-	case "transitions/search":
+	case "payloads/search":
 		{
 			var (
 				result interface{}
@@ -282,7 +265,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			)
 			if reqQuery.Data == nil {
 				resQuery.Code = CodeEmptySearchQuery
-				resQuery.Log = "Search query is empty"
+				resQuery.Log = "search query is empty"
 				return
 			}
 			// Unmarshal search query
@@ -299,61 +282,8 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			if mgoQuery.Offset < resOffset {
 				mgoQuery.Offset = resOffset
 			}
-			// Search transitions in Database
-			result, err = app.state.SearchTransitions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
-			if err != nil && err != mgo.ErrNotFound {
-				resQuery.Code = CodeParseSearchQueryError
-				resQuery.Log = err.Error()
-				return
-			}
-			bs, _ := json.Marshal(result)
-			resQuery.Value = bs
-		}
-	case "conversions":
-		{
-			var (
-				result interface{}
-				err    error
-			)
-			if reqQuery.Data != nil {
-				result, err = app.state.GetConversion(string(reqQuery.Data))
-				app.logger.Debug("Got conversion: %+v", result)
-			}
-			if err != nil && err != mgo.ErrNotFound {
-				resQuery.Code = CodeTypeQueryError
-				resQuery.Log = err.Error()
-				return
-			}
-			bs, _ := json.Marshal(result)
-			resQuery.Value = bs
-		}
-	case "conversions/search":
-		{
-			var (
-				result interface{}
-				err    error
-			)
-			if reqQuery.Data == nil {
-				resQuery.Code = CodeEmptySearchQuery
-				resQuery.Log = "Search query is empty"
-				return
-			}
-			// Unmarshal search query
-			var mgoQuery MongoQuery
-			if err = json.Unmarshal(reqQuery.Data, &mgoQuery); err != nil {
-				resQuery.Code = CodeParseSearchQueryError
-				resQuery.Log = err.Error()
-				return
-			}
-			// Check limit and offset values
-			if mgoQuery.Limit > resLimit || resOffset <= 0 {
-				mgoQuery.Limit = resLimit
-			}
-			if mgoQuery.Offset < resOffset {
-				mgoQuery.Offset = resOffset
-			}
-			// Search conversions in Database
-			result, err = app.state.SearchConversions(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
+			// Search transaction data in Database
+			result, err = app.state.SearchPayloads(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
 			if err != nil && err != mgo.ErrNotFound {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
@@ -365,7 +295,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 	default:
 		{
 			resQuery.Code = CodeTypeUnknownRequest
-			resQuery.Log = "The path was not detected"
+			resQuery.Log = "the path was not detected"
 			return
 		}
 	}

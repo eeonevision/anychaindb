@@ -22,6 +22,8 @@
 # Ignore test results
 client/tests/artifacts/*
 api/tests/artifacts/*
+crypto/tests/artifacts/*
+
 
 # Ignore envornment files
 .env

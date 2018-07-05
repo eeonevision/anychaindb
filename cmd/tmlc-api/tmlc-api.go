@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -25,7 +25,7 @@ import (
 	"flag"
 	"os"
 
-	lapi "github.com/leadschain/leadschain/api"
+	lapi "github.com/eeonevision/anychaindb/api"
 	tmflags "github.com/tendermint/tmlibs/cli/flags"
 	"github.com/tendermint/tmlibs/log"
 )
@@ -35,7 +35,7 @@ func main() {
 	endpointPtr := flag.String("endpoint", "http://0.0.0.0:46657", "Validator grpc endpoint address")
 	ipPtr := flag.String("ip", "localhost", "Listen host ip")
 	portPtr := flag.String("port", "8888", "Listen host port")
-	logLevel := flag.String("loglevel", "*:info", "log level for leadschain api module: rest-api:info")
+	logLevel := flag.String("loglevel", "*:info", "log level for anychaindb api module: rest-api:info")
 	flag.Parse()
 
 	// Create server

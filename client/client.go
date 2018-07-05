@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,18 +22,18 @@
 package client
 
 import (
+	"encoding/base64"
 	"time"
 
+	"github.com/eeonevision/anychaindb/crypto"
+	"github.com/eeonevision/anychaindb/state"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/leadschain/crypto"
-	"github.com/leadschain/leadschain/state"
 )
 
-// API is the high level interface for leadschain client applications
+// API is the high level interface for Anychaindb client applications
 type API interface {
 	AccountAPI
-	TransitionAPI
-	ConversionAPI
+	PayloadAPI
 }
 
 // AccountAPI describes all account related functions
@@ -44,20 +44,12 @@ type AccountAPI interface {
 	SearchAccounts(query []byte) ([]state.Account, error)
 }
 
-// TransitionAPI interface provides all transition related methods
-type TransitionAPI interface {
-	AddTransition(affiliateID, advertiserID, clickID, streamID, offerID string, expiresIn int64) (ID string, err error)
-	GetTransition(ID string) (*state.Transition, error)
-	ListTransitions() ([]state.Transition, error)
-	SearchTransitions(query []byte) ([]state.Transition, error)
-}
-
-// ConversionAPI interface provides all conversion related methods
-type ConversionAPI interface {
-	AddConversion(affiliateID, advertiserID, clickID, streamID, clientID, goalID, offerID, status, comment string) (ID string, err error)
-	GetConversion(ID string) (*state.Conversion, error)
-	ListConversions() ([]state.Conversion, error)
-	SearchConversions(query []byte) ([]state.Conversion, error)
+// PayloadAPI interface provides all transaction data related methods
+type PayloadAPI interface {
+	AddPayload(senderAccountID, receiverAccountID string, publicData, privateData []byte) (ID string, err error)
+	GetPayload(ID string) (*state.Payload, error)
+	ListPayloads() ([]state.Payload, error)
+	SearchPayloads(query []byte) ([]state.Payload, error)
 }
 
 // NewAPI constructs a new API instances based on an http transport
@@ -98,67 +90,48 @@ func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
 	return api.base.SearchAccounts(query)
 }
 
-func (api *apiClient) AddTransition(affiliateID, advertiserID, clickID, streamID, offerID string, expiresIn int64) (ID string, err error) {
+func (api *apiClient) AddPayload(senderAccountID, receiverAccountID string, publicData, privateData []byte) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
 	now := time.Now()
 	createdAt := now.UTC().UnixNano()
-	if err := api.fast.AddTransition(&state.Transition{
-		ID:                  id,
-		AdvertiserAccountID: advertiserID,
-		AffiliateAccountID:  affiliateID,
-		ClickID:             clickID,
-		StreamID:            streamID,
-		OfferID:             offerID,
-		CreatedAt:           float64(createdAt),
-		ExpiresIn:           expiresIn,
+
+	// Get receiver's public key
+	receiver, err := api.GetAccount(receiverAccountID)
+	if err != nil {
+		return "", err
+	}
+
+	// ECDH encrypted private data with public key of receiver
+	receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
+	if err != nil {
+		return "", err
+	}
+	privateDataEnc, err := receiverPubKey.Encrypt(privateData)
+	if err != nil {
+		return "", err
+	}
+
+	if err = api.fast.AddPayload(&state.Payload{
+		ID:                id,
+		SenderAccountID:   senderAccountID,
+		ReceiverAccountID: receiverAccountID,
+		PublicData:        string(publicData),
+		PrivateData:       base64.StdEncoding.EncodeToString(privateDataEnc),
+		CreatedAt:         float64(createdAt),
 	}); err != nil {
 		return "", err
 	}
 	return id, nil
 }
 
-func (api *apiClient) GetTransition(id string) (*state.Transition, error) {
-	return api.base.GetTransition(id)
+func (api *apiClient) GetPayload(id string) (*state.Payload, error) {
+	return api.base.GetPayload(id)
 }
 
-func (api *apiClient) ListTransitions() ([]state.Transition, error) {
-	return api.base.ListTransitions()
+func (api *apiClient) ListPayloads() ([]state.Payload, error) {
+	return api.base.ListPayloads()
 }
 
-func (api *apiClient) SearchTransitions(query []byte) ([]state.Transition, error) {
-	return api.base.SearchTransitions(query)
-}
-
-func (api *apiClient) AddConversion(affiliateID, advertiserID, clickID, streamID, clientID, goalID, offerID, status, comment string) (ID string, err error) {
-	id := bson.NewObjectId().Hex()
-	now := time.Now()
-	createdAt := now.UTC().UnixNano()
-	if err := api.fast.AddConversion(&state.Conversion{
-		ID:                  id,
-		AdvertiserAccountID: advertiserID,
-		AffiliateAccountID:  affiliateID,
-		ClickID:             clickID,
-		StreamID:            streamID,
-		ClientID:            clientID,
-		OfferID:             offerID,
-		GoalID:              goalID,
-		CreatedAt:           float64(createdAt),
-		Status:              status,
-		Comment:             comment,
-	}); err != nil {
-		return "", err
-	}
-	return id, nil
-}
-
-func (api *apiClient) GetConversion(id string) (*state.Conversion, error) {
-	return api.base.GetConversion(id)
-}
-
-func (api *apiClient) ListConversions() ([]state.Conversion, error) {
-	return api.base.ListConversions()
-}
-
-func (api *apiClient) SearchConversions(query []byte) ([]state.Conversion, error) {
-	return api.base.SearchConversions(query)
+func (api *apiClient) SearchPayloads(query []byte) ([]state.Payload, error) {
+	return api.base.SearchPayloads(query)
 }

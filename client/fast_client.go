@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -28,9 +28,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/leadschain/leadschain/crypto"
-	"github.com/leadschain/leadschain/state"
-	"github.com/leadschain/leadschain/transaction"
+	"github.com/eeonevision/anychaindb/crypto"
+	"github.com/eeonevision/anychaindb/state"
+	"github.com/eeonevision/anychaindb/transaction"
 )
 
 type FastClient struct {
@@ -65,7 +65,7 @@ func (c *FastClient) AddAccount(acc *state.Account) error {
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.AccountAdd, txBytes)
+	tx := transaction.New(transaction.AccountAdd, c.AccountID, txBytes)
 	bs, _ := tx.ToBytes()
 	res, err := c.BroadcastTxAsync(bs)
 	if err != nil {
@@ -77,32 +77,12 @@ func (c *FastClient) AddAccount(acc *state.Account) error {
 	return nil
 }
 
-func (c *FastClient) AddTransition(tr *state.Transition) error {
-	txBytes, err := tr.MarshalMsg(nil)
+func (c *FastClient) AddPayload(data *state.Payload) error {
+	txBytes, err := data.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.TransitionAdd, txBytes)
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.BroadcastTxAsync(bs)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode != 200 {
-		return fmt.Errorf("%v: %s", res.StatusCode, res.Status)
-	}
-	return nil
-}
-
-func (c *FastClient) AddConversion(cv *state.Conversion) error {
-	txBytes, err := cv.MarshalMsg(nil)
-	if err != nil {
-		return err
-	}
-	tx := transaction.New(transaction.ConversionAdd, txBytes)
+	tx := transaction.New(transaction.PayloadAdd, c.AccountID, txBytes)
 	if err := tx.Sign(c.Key); err != nil {
 		return err
 	}

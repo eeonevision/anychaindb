@@ -2,8 +2,9 @@
 
 # default values for environment variables
 type=""
+clean_all=true
 export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
-export DATA_ROOT="$HOME/leadschain"
+export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
 export DB_PORT=27017
 export P2P_PORT=46656
@@ -18,6 +19,10 @@ do
 case $i in
     --type=*)
         type="${i#*=}"
+        shift
+    ;;
+    --clean_all=*)
+        clean_all="${i#*=}"
         shift
     ;;
     --node_ip=*)
@@ -73,40 +78,39 @@ prepare () {
     cd $DATA_ROOT/deploy
 }
 
-# clean method removes leadschain docker containers and prunes volumes/networks, 
-# that was used by leadschain
+# clean method removes anychaindb docker containers and prunes volumes/networks, 
+# that was used by anychaindb
 clean () {
-    echo "Removing Leadschain images"
-    docker stop $(docker ps | grep "leadschain-" | awk '/ / { print $1 }')
-    docker rm $(docker ps -a | grep "leadschain-" | awk '/ / { print $1 }')
+    echo "Removing AnychainDB images"
+    docker stop $(docker ps | grep "anychaindb-" | awk '/ / { print $1 }')
+    docker rm $(docker ps -a | grep "anychaindb-" | awk '/ / { print $1 }')
     docker volume rm $(docker volume ls -qf dangling=true)
     docker image prune -a -f
     docker system prune -f
 }
 
+# check for starting clean process
+if [ "$clean_all" = true ]; then
+    clean
+fi
+
 # check conditions
 if [ "$type" = "node" ]; then
     prepare
-    clean
-    echo "[RELEASE] Deploying Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
-    docker-compose -f leadschain.yaml up
+    echo "[RELEASE] Deploying AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml && \
+    docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "node-dev" ]; then
     prepare
-    clean
-    echo "[DEVELOP] Deploying Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
-    docker-compose -f leadschain-develop.yaml up
-elif [ "$type" = "clean" ]; then
-    clean
+    echo "[DEVELOP] Deploying AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml && \
+    docker-compose -f anychaindb-develop.yaml up -d
 elif [ "$type" = "update" ]; then
-    clean
-    echo "[RELEASE] Starting Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
-    docker-compose -f leadschain.yaml up
+    echo "[RELEASE] Starting AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml && \
+    docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "update-dev" ]; then
-    clean
-    echo "[DEVELOP] Starting Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
-    docker-compose -f leadschain-develop.yaml up
+    echo "[DEVELOP] Starting AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml && \
+    docker-compose -f anychaindb-develop.yaml up -d
 fi

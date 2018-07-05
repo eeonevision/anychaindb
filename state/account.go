@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -24,7 +24,7 @@ package state
 import (
 	"errors"
 
-	"github.com/leadschain/leadschain/crypto"
+	"github.com/eeonevision/anychaindb/crypto"
 )
 
 //go:generate msgp

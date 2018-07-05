@@ -1,20 +1,20 @@
 package core
 
 import (
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/version"
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 // Query the application for some information.
 //
 // ```shell
-// curl 'localhost:46657/abci_query?path=""&data="abcd"&prove=true'
+// curl 'localhost:26657/abci_query?path=""&data="abcd"&trusted=false'
 // ```
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // result, err := client.ABCIQuery("", "abcd", true)
 // ```
 //
@@ -64,11 +64,11 @@ func ABCIQuery(path string, data cmn.HexBytes, height int64, trusted bool) (*cty
 // Get some info about the application.
 //
 // ```shell
-// curl 'localhost:46657/abci_info'
+// curl 'localhost:26657/abci_info'
 // ```
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // info, err := client.ABCIInfo()
 // ```
 //

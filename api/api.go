@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -32,7 +32,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/leadschain/leadschain/api/handler"
+	"github.com/eeonevision/anychaindb/api/handler"
 )
 
 type server struct {
@@ -56,14 +56,10 @@ func NewHTTPServer(GRPCEndpoint, listenIP, httpPort string) *server {
 	m.GET("/v1/accounts", handler.GetAccountsHandler)
 	m.GET("/v1/accounts/:id", handler.GetAccountDetailsHandler)
 	m.POST("/v1/accounts", handler.PostAccountsHandler)
-	// Transitions
-	m.GET("/v1/transitions", handler.GetTransitionsHandler)
-	m.GET("/v1/transitions/:id", handler.GetTransitionDetailsHandler)
-	m.POST("/v1/transitions", handler.PostTransitionsHandler)
-	//Conversions
-	m.GET("/v1/conversions", handler.GetConversionsHandler)
-	m.GET("/v1/conversions/:id", handler.GetConversionDetailsHandler)
-	m.POST("/v1/conversions", handler.PostConversionsHandler)
+	// Payloads
+	m.GET("/v1/payloads", handler.GetPayloadsHandler)
+	m.GET("/v1/payloads/:id", handler.GetPayloadDetailsHandler)
+	m.POST("/v1/payloads", handler.PostPayloadsHandler)
 
 	http.Handle("/", m)
 

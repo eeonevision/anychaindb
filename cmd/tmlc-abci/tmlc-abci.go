@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -28,7 +28,7 @@ import (
 	tmflags "github.com/tendermint/tmlibs/cli/flags"
 	"github.com/tendermint/tmlibs/log"
 
-	labci "github.com/leadschain/leadschain/abci-app"
+	labci "github.com/eeonevision/anychaindb/abci-app"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/common"
 )
@@ -38,7 +38,7 @@ func main() {
 	addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
 	abciPtr := flag.String("abci", "socket", "socket | grpc")
 	dbHost := flag.String("dbhost", "localhost", "database host path")
-	dbName := flag.String("dbname", "leadschain", "database name")
+	dbName := flag.String("dbname", "anychaindb", "database name")
 	logLevel := flag.String("loglevel", "*:info", "log level for abci modules: abci-app:info,abci-server:info,*:error")
 	flag.Parse()
 

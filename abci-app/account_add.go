@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -24,9 +24,9 @@ package app
 import (
 	"errors"
 
-	"github.com/leadschain/leadschain/crypto"
-	"github.com/leadschain/leadschain/state"
-	"github.com/leadschain/leadschain/transaction"
+	"github.com/eeonevision/anychaindb/crypto"
+	"github.com/eeonevision/anychaindb/state"
+	"github.com/eeonevision/anychaindb/transaction"
 )
 
 func checkAccountAddTransaction(tx *transaction.Transaction, s *state.State) error {
@@ -36,7 +36,7 @@ func checkAccountAddTransaction(tx *transaction.Transaction, s *state.State) err
 		return err
 	}
 	if s.HasAccount(data.ID) {
-		return errors.New("Account exists")
+		return errors.New("account exists")
 	}
 	if _, err := crypto.NewFromStrings(data.PubKey, ""); err != nil {
 		return err

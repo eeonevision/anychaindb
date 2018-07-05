@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -27,7 +27,7 @@ import (
 
 	"github.com/tinylib/msgp/msgp"
 
-	"github.com/leadschain/leadschain/crypto"
+	"github.com/eeonevision/anychaindb/crypto"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -37,6 +37,7 @@ import (
 type Transaction struct {
 	Type      TransactionType `msg:"type" json:"type"`
 	Timestamp int64           `msg:"timestamp" json:"timestamp"`
+	Signer    string          `msg:"signer" json:"signer"`
 	Signature string          `msg:"signature" json:"signature"`
 	Nonce     uint32          `msg:"nonce" json:"nonce"`
 	Data      []byte          `msg:"data" json:"data"`
@@ -45,9 +46,8 @@ type Transaction struct {
 type TransactionType string
 
 const (
-	AccountAdd    TransactionType = "add-account"
-	TransitionAdd TransactionType = "add-transition"
-	ConversionAdd TransactionType = "add-conversion"
+	AccountAdd TransactionType = "add-account"
+	PayloadAdd TransactionType = "add-payload"
 )
 
 func (t *Transaction) FromBytes(bs []byte) error {
@@ -64,6 +64,7 @@ func (t *Transaction) Hash() []byte {
 	w := msgp.NewWriter(hash)
 	w.WriteString(string(t.Type))
 	w.WriteInt64(t.Timestamp)
+	w.WriteString(t.Signer)
 	w.WriteUint32(t.Nonce)
 	w.WriteBytes(t.Data)
 	w.Flush()
@@ -85,8 +86,8 @@ func (t *Transaction) Verify(key *crypto.Key) error {
 	return key.Verify(hash, t.Signature)
 }
 
-func New(t TransactionType, data []byte) *Transaction {
+func New(t TransactionType, signer string, data []byte) *Transaction {
 	now := time.Now().UnixNano()
 	rand.Seed(now)
-	return &Transaction{t, now, "", rand.Uint32(), data}
+	return &Transaction{t, now, signer, "", rand.Uint32(), data}
 }

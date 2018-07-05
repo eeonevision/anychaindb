@@ -1,0 +1,115 @@
+#
+# Copyright (C) 2018 eeonevision
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+
+version: "3.5"
+
+services:
+
+  anychaindb-mongodb:
+    image: mongo:latest
+    container_name: anychaindb-mongodb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      back:
+        ipv4_address: 172.16.238.02
+    expose:
+      - ${DB_PORT}
+    volumes:
+      - type: bind
+        source: ${DATA_ROOT}/mongo
+        target: /data/db
+    entrypoint: mongod --bind_ip_all --quiet
+    
+  anychaindb-abci-develop:
+    image: anychaindb/abci:develop
+    container_name: anychaindb-abci-develop
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      back:
+        ipv4_address: 172.16.238.03
+    expose:
+      - ${ABCI_PORT}
+    ports:
+      - ${ABCI_PORT}:${ABCI_PORT}
+    depends_on:
+      - anychaindb-mongodb
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:info
+
+  anychaindb-node-develop:
+    image: anychaindb/node:develop
+    container_name: anychaindb-node-develop
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    network_mode: "host"
+    expose:
+      - ${P2P_PORT}
+      - ${GRPC_PORT}
+    ports:
+      - ${P2P_PORT}:${P2P_PORT}
+      - ${GRPC_PORT}:${GRPC_PORT}
+    volumes:
+      - type: bind
+        source: ${DATA_ROOT}
+        target: /tendermint
+    depends_on:
+      - anychaindb-abci-develop
+    entrypoint: "sh -c \"\
+      tendermint init && \
+      tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
+      \""
+
+  anychaindb-rest-api-develop:
+    image: anychaindb/api:develop
+    container_name: anychaindb-rest-api-develop
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    network_mode: "host"
+    expose:
+      - ${REST_PORT}
+    ports:
+      - ${REST_PORT}:${REST_PORT}
+    depends_on:
+      - anychaindb-abci-develop
+    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:info
+
+networks:
+  back:
+    # use the bridge driver, but enable IPv6
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24

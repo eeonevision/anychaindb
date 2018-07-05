@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.10.1 (June 15, 2018)
+
+FEATURE:
+
+ - [aminoscan] aminoscan --color will print ASCII bytes in different colors
+ 
+BUG FIXES:
+ - do not err if prefix bytes are exactly 4 (for registered types) 
+
+## 0.10.0 (June 12, 2018)
+
+BREAKING CHANGE:
+
+ - 100% Proto3 compatibility for primitive types, repeated fields, and embedded structs/messages.
+ - BigEndian -> LittleEndian
+ - [u]int[64/32] is (signed) Varint by default, "fixed32" and "fixed64" to use 4 and 8 byte types.
+ - Amino:JSON [u]int64 and ints are strings.
+ - Enforce UTC timezone for JSON encoding of time.
+
+## 0.9.11 (May 27, 2018)
+
+NEW FEATURES:
+
+ - Seal() on a codec to prevent further modifications. #150
+ - Global Marshal/Unmarshal methods on a sealed codec with nothing registered.
+
+## 0.9.10 (May 10, 2018)
+
+BREAKING CHANGE:
+
+ - Amino:JSON encoding of interfaces use the registered concrete type name, not the disfix bytes.
+
+## 0.9.9 (May 1, 2018)
+
+BUG FIXES:
+
+ - MarshalAmino/UnmarshalAmino actually works (sorry!)
+
+## 0.9.8 (April 26, 2018)
+
+NEW FEATURES:
+ - DeepCopy() copies any Amino object (with support for .DeepCopy() and
+   .MarshalAmino/UnmarshalAmino().
+
+## 0.9.7 (April 25, 2019)
+
+FEATURES:
+ - Add MustUnmarshalBinary and MustUnmarshalBinaryBare to the Codec
+   - both methods are analogous to their marshalling counterparts
+   - both methods will panic in case of an error
+ - MarshalJSONIndent
+
 ## 0.9.6 (April 5, 2018)
 
 IMPROVEMENTS:

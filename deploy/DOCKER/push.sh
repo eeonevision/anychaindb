@@ -11,9 +11,9 @@ if [ -z "$TAG" ]; then
 fi
 
 echo "Push two docker images with latest and ${TAG} tags ..."
-docker push "leadschain/node"
-docker push "leadschain/node:$TAG"
-docker push "leadschain/abci"
-docker push "leadschain/abci:$TAG"
-docker push "leadschain/api"
-docker push "leadschain/api:$TAG"
+docker push "anychaindb/node"
+docker push "anychaindb/node:$TAG"
+docker push "anychaindb/abci"
+docker push "anychaindb/abci:$TAG"
+docker push "anychaindb/api"
+docker push "anychaindb/api:$TAG"

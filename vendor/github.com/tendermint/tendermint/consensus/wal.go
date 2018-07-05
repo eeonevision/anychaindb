@@ -10,10 +10,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tendermint/go-amino"
+	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/types"
-	auto "github.com/tendermint/tmlibs/autofile"
-	cmn "github.com/tendermint/tmlibs/common"
+	auto "github.com/tendermint/tendermint/libs/autofile"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 const (
@@ -50,7 +50,8 @@ func RegisterWALMessages(cdc *amino.Codec) {
 
 // WAL is an interface for any write-ahead logger.
 type WAL interface {
-	Save(WALMessage)
+	Write(WALMessage)
+	WriteSync(WALMessage)
 	Group() *auto.Group
 	SearchForEndHeight(height int64, options *WALSearchOptions) (gr *auto.GroupReader, found bool, err error)
 
@@ -67,12 +68,11 @@ type baseWAL struct {
 	cmn.BaseService
 
 	group *auto.Group
-	light bool // ignore block parts
 
 	enc *WALEncoder
 }
 
-func NewWAL(walFile string, light bool) (*baseWAL, error) {
+func NewWAL(walFile string) (*baseWAL, error) {
 	err := cmn.EnsureDir(filepath.Dir(walFile), 0700)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to ensure WAL directory is in place")
@@ -84,7 +84,6 @@ func NewWAL(walFile string, light bool) (*baseWAL, error) {
 	}
 	wal := &baseWAL{
 		group: group,
-		light: light,
 		enc:   NewWALEncoder(group),
 	}
 	wal.BaseService = *cmn.NewBaseService(nil, "baseWAL", wal)
@@ -100,40 +99,42 @@ func (wal *baseWAL) OnStart() error {
 	if err != nil {
 		return err
 	} else if size == 0 {
-		wal.Save(EndHeightMessage{0})
+		wal.WriteSync(EndHeightMessage{0})
 	}
 	err = wal.group.Start()
 	return err
 }
 
 func (wal *baseWAL) OnStop() {
-	wal.BaseService.OnStop()
 	wal.group.Stop()
+	wal.group.Close()
 }
 
-// called in newStep and for each pass in receiveRoutine
-func (wal *baseWAL) Save(msg WALMessage) {
+// Write is called in newStep and for each receive on the
+// peerMsgQueue and the timeoutTicker.
+// NOTE: does not call fsync()
+func (wal *baseWAL) Write(msg WALMessage) {
 	if wal == nil {
 		return
 	}
 
-	if wal.light {
-		// in light mode we only write new steps, timeouts, and our own votes (no proposals, block parts)
-		if mi, ok := msg.(msgInfo); ok {
-			if mi.PeerID != "" {
-				return
-			}
-		}
-	}
-
 	// Write the wal message
 	if err := wal.enc.Encode(&TimedWALMessage{time.Now(), msg}); err != nil {
-		cmn.PanicQ(cmn.Fmt("Error writing msg to consensus wal: %v \n\nMessage: %v", err, msg))
+		panic(cmn.Fmt("Error writing msg to consensus wal: %v \n\nMessage: %v", err, msg))
+	}
+}
+
+// WriteSync is called when we receive a msg from ourselves
+// so that we write to disk before sending signed messages.
+// NOTE: calls fsync()
+func (wal *baseWAL) WriteSync(msg WALMessage) {
+	if wal == nil {
+		return
 	}
 
-	// TODO: only flush when necessary
+	wal.Write(msg)
 	if err := wal.group.Flush(); err != nil {
-		cmn.PanicQ(cmn.Fmt("Error flushing consensus wal buf to file. Error: %v \n", err))
+		panic(cmn.Fmt("Error flushing consensus wal buf to file. Error: %v \n", err))
 	}
 }
 
@@ -143,13 +144,14 @@ type WALSearchOptions struct {
 	IgnoreDataCorruptionErrors bool
 }
 
-// SearchForEndHeight searches for the EndHeightMessage with the height and
-// returns an auto.GroupReader, whenever it was found or not and an error.
+// SearchForEndHeight searches for the EndHeightMessage with the given height
+// and returns an auto.GroupReader, whenever it was found or not and an error.
 // Group reader will be nil if found equals false.
 //
 // CONTRACT: caller must close group reader.
 func (wal *baseWAL) SearchForEndHeight(height int64, options *WALSearchOptions) (gr *auto.GroupReader, found bool, err error) {
 	var msg *TimedWALMessage
+	lastHeightFound := int64(-1)
 
 	// NOTE: starting from the last file in the group because we're usually
 	// searching for the last height. See replay.go
@@ -165,17 +167,25 @@ func (wal *baseWAL) SearchForEndHeight(height int64, options *WALSearchOptions) 
 		for {
 			msg, err = dec.Decode()
 			if err == io.EOF {
+				// OPTIMISATION: no need to look for height in older files if we've seen h < height
+				if lastHeightFound > 0 && lastHeightFound < height {
+					gr.Close()
+					return nil, false, nil
+				}
 				// check next file
 				break
 			}
 			if options.IgnoreDataCorruptionErrors && IsDataCorruptionError(err) {
+				wal.Logger.Debug("Corrupted entry. Skipping...", "err", err)
 				// do nothing
+				continue
 			} else if err != nil {
 				gr.Close()
 				return nil, false, err
 			}
 
 			if m, ok := msg.Msg.(EndHeightMessage); ok {
+				lastHeightFound = m.Height
 				if m.Height == height { // found
 					wal.Logger.Debug("Found", "height", height, "index", index)
 					return gr, true, nil
@@ -270,23 +280,17 @@ func (dec *WALDecoder) Decode() (*TimedWALMessage, error) {
 
 	b = make([]byte, 4)
 	_, err = dec.rd.Read(b)
-	if err == io.EOF {
-		return nil, err
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read length: %v", err)
 	}
 	length := binary.BigEndian.Uint32(b)
 
 	if length > maxMsgSizeBytes {
-		return nil, DataCorruptionError{fmt.Errorf("length %d exceeded maximum possible value of %d bytes", length, maxMsgSizeBytes)}
+		return nil, fmt.Errorf("length %d exceeded maximum possible value of %d bytes", length, maxMsgSizeBytes)
 	}
 
 	data := make([]byte, length)
 	_, err = dec.rd.Read(data)
-	if err == io.EOF {
-		return nil, err
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data: %v", err)
 	}
@@ -308,8 +312,9 @@ func (dec *WALDecoder) Decode() (*TimedWALMessage, error) {
 
 type nilWAL struct{}
 
-func (nilWAL) Save(m WALMessage)  {}
-func (nilWAL) Group() *auto.Group { return nil }
+func (nilWAL) Write(m WALMessage)     {}
+func (nilWAL) WriteSync(m WALMessage) {}
+func (nilWAL) Group() *auto.Group     { return nil }
 func (nilWAL) SearchForEndHeight(height int64, options *WALSearchOptions) (gr *auto.GroupReader, found bool, err error) {
 	return nil, false, nil
 }

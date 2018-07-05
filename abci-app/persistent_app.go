@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Leads Studio
+ * Copyright (C) 2018 eeonevision
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -24,9 +24,9 @@ package app
 import (
 	"github.com/tendermint/tmlibs/log"
 
+	"github.com/eeonevision/anychaindb/state"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/leadschain/state"
 	"github.com/tendermint/abci/types"
 )
 
@@ -94,7 +94,7 @@ func (app *PersistentApplication) Query(reqQuery types.RequestQuery) types.Respo
 	return app.app.Query(reqQuery)
 }
 
-// InitChain method initializes Leadschain
+// InitChain method initializes Anychaindb
 func (app *PersistentApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	return types.ResponseInitChain{}
 }
