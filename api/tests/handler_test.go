@@ -228,7 +228,7 @@ func TestCreatePayload(t *testing.T) {
 		// Wait for transaction approve
 		time.Sleep(time.Second * 5)
 	}
-	t.Logf("Added payload: %v", data)
+	t.Logf("Added payload: %v", string(data))
 }
 
 func TestGetPayload(t *testing.T) {
