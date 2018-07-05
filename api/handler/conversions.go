@@ -32,17 +32,17 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Payload struct keeps transaction data related fields.
-//   - PublicData keeps open data;
-//   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
-//   - CreatedAt is date of object creation in UNIX time (nanoseconds).
-type Payload struct {
-	ID                string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	SenderAccountID   string  `msg:"sender_account_id" json:"sender_account_id" mapstructure:"sender_account_id" bson:"sender_account_id"`
-	ReceiverAccountID string  `msg:"receiver_account_id" json:"receiver_account_id" mapstructure:"receiver_account_id" bson:"receiver_account_id"`
-	PublicData        string  `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
-	PrivateData       string  `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	CreatedAt         float64 `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
+// Conversion struct describes conversion related fields
+//   - PrivateData keeps cpa_uid, client_id, goal_id, comment, status and some other relevant to postback private data.
+//     Encrypted by affiliate's public key by ECDH algorithm and represented as base64 string.
+//   - PublicData keeps offer_id, stream_id, status, advertiser_account_id and affiliate's public key
+//     to provide possibility for transaction proving by affiliate. Encrypted by BLAKE2B 256bit hash.
+type Conversion struct {
+	ID                 string      `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
+	AffiliateAccountID string      `msg:"affiliate_account_id" json:"affiliate_account_id" mapstructure:"affiliate_account_id" bson:"affiliate_account_id"`
+	PrivateData        interface{} `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
+	PublicData         interface{} `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
+	CreatedAt          float64     `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
 }
 
 // Metadata struct keep information about requester remote address.
@@ -56,8 +56,8 @@ type PrivateDataWrapper struct {
 	*Metadata   `msg:"metadata" json:"metadata" mapstructure:"metadata" bson:"metadata"`
 }
 
-// PostPayloadsHandler uses FastAPI for sends new transaction data requests in async mode to blockchain.
-func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+// PostConversionsHandler uses FastAPI for sends new conversions requests in async mode to blockchain.
+func PostConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	// Parse form's JSON data
@@ -69,14 +69,14 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	var data Payload
+	var data Conversion
 	if err := mapstructure.Decode(req.Data, &data); err != nil {
-		writeResult(http.StatusBadRequest, "Payload decode error: "+err.Error(), nil, w)
+		writeResult(http.StatusBadRequest, "Conversion decode error: "+err.Error(), nil, w)
 		return
 	}
 	defer r.Body.Close()
 
-	// Add payload to blockchain
+	// Add conversion to blockchain
 	key, err := crypto.NewFromStrings(req.PubKey, req.PrivKey)
 	if err != nil {
 		writeResult(http.StatusUnauthorized, err.Error(), nil, w)
@@ -101,22 +101,22 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	id, err := api.AddPayload(req.AccountID, data.ReceiverAccountID, pubMrsh, privMrsh)
+	id, err := api.AddConversion(data.AffiliateAccountID, privMrsh, pubMrsh)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
 
 	// OK
-	writeResult(http.StatusAccepted, "Payload added", Payload{ID: id}, w)
+	writeResult(http.StatusAccepted, "Conversion added", Conversion{ID: id}, w)
 }
 
-// GetPayloadsHandler uses BaseAPI for search and list transaction data.
+// GetConversionsHandler uses BaseAPI for search and list conversions.
 // Query parameters: Query, Limit, Offset can be optional.
 // Query - MongoDB query string.
 // Limit - maximum 500 items.
 // Offset - default 0.
-func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func GetConversionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	var query interface{}
@@ -161,12 +161,12 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		Offset: offset,
 	}
 	searchReqStr, _ := json.Marshal(searchReq)
-	cnv, err := api.SearchPayloads(searchReqStr)
+	cnv, err := api.SearchConversions(searchReqStr)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Empty payloads list
+	// Empty conversions list
 	if cnv == nil {
 		writeResult(http.StatusNotFound, "Empty list", nil, w)
 		return
@@ -175,9 +175,9 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	return
 }
 
-// GetPayloadDetailsHandler uses BaseAPI for get payload details by it id.
+// GetConversionDetailsHandler uses BaseAPI for get conversion details by it id.
 // Query parameters ID is required.
-func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func GetConversionDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	id := ps.ByName("id")
@@ -187,12 +187,12 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 	api := client.NewAPI(endpoint, nil, "")
-	cnv, err := api.GetPayload(id)
+	cnv, err := api.GetConversion(id)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Payload not found
+	// Conversion not found
 	if cnv == nil {
 		writeResult(http.StatusNotFound, "Not Found", nil, w)
 		return

@@ -24,8 +24,8 @@ package app
 import (
 	"errors"
 
-	"github.com/leadschain/leadschain/state"
-	"github.com/leadschain/leadschain/transaction"
+	"github.com/leadschain/anychaindb/state"
+	"github.com/leadschain/anychaindb/transaction"
 )
 
 func checkPayloadAddTransaction(tx *transaction.Transaction, s *state.State) error {

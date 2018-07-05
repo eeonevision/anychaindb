@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leadschain/leadschain/crypto"
+	"github.com/leadschain/anychaindb/crypto"
 )
 
 var privateKey = flag.String("priv", "CHFHcLSe/eyDb1vLgX5LX11RQhe8D4l9zTFLnYXTTk0=", "ecdsa private key")

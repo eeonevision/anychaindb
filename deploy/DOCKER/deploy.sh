@@ -4,7 +4,7 @@
 type=""
 clean_all=true
 export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
-export DATA_ROOT="$HOME/leadschain"
+export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
 export DB_PORT=27017
 export P2P_PORT=46656
@@ -78,12 +78,12 @@ prepare () {
     cd $DATA_ROOT/deploy
 }
 
-# clean method removes leadschain docker containers and prunes volumes/networks, 
-# that was used by leadschain
+# clean method removes anychaindb docker containers and prunes volumes/networks, 
+# that was used by anychaindb
 clean () {
-    echo "Removing Leadschain images"
-    docker stop $(docker ps | grep "leadschain-" | awk '/ / { print $1 }')
-    docker rm $(docker ps -a | grep "leadschain-" | awk '/ / { print $1 }')
+    echo "Removing AnychainDB images"
+    docker stop $(docker ps | grep "anychaindb-" | awk '/ / { print $1 }')
+    docker rm $(docker ps -a | grep "anychaindb-" | awk '/ / { print $1 }')
     docker volume rm $(docker volume ls -qf dangling=true)
     docker image prune -a -f
     docker system prune -f
@@ -97,20 +97,20 @@ fi
 # check conditions
 if [ "$type" = "node" ]; then
     prepare
-    echo "[RELEASE] Deploying Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
-    docker-compose -f leadschain.yaml up -d
+    echo "[RELEASE] Deploying AnychainDB node..."
+    curl -L -O https://github.com/anychaindb/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml && \
+    docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "node-dev" ]; then
     prepare
-    echo "[DEVELOP] Deploying Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
-    docker-compose -f leadschain-develop.yaml up -d
+    echo "[DEVELOP] Deploying AnychainDB node..."
+    curl -L -O https://github.com/anychaindb/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml && \
+    docker-compose -f anychaindb-develop.yaml up -d
 elif [ "$type" = "update" ]; then
-    echo "[RELEASE] Starting Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/master/deploy/DOCKER/leadschain.yaml && \
-    docker-compose -f leadschain.yaml up -d
+    echo "[RELEASE] Starting AnychainDB node..."
+    curl -L -O https://github.com/anychaindb/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml && \
+    docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "update-dev" ]; then
-    echo "[DEVELOP] Starting Leadschain node..."
-    curl -L -O https://github.com/leadschain/leadschain/raw/develop/deploy/DOCKER/leadschain-develop.yaml && \
-    docker-compose -f leadschain-develop.yaml up -d
+    echo "[DEVELOP] Starting AnychainDB node..."
+    curl -L -O https://github.com/anychaindb/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml && \
+    docker-compose -f anychaindb-develop.yaml up -d
 fi

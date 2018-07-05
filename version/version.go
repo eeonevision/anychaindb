@@ -8,7 +8,7 @@ const (
 )
 
 var (
-	// Version is the current version of Leadschain platform.
+	// Version is the current version of AnychainDB platform.
 	Version = "2.0.0"
 
 	// GitCommit is the current HEAD set using ldflags.

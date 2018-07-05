@@ -23,9 +23,9 @@ version: "3.5"
 
 services:
 
-  leadschain-mongodb:
+  anychaindb-mongodb:
     image: mongo:latest
-    container_name: leadschain-mongodb
+    container_name: anychaindb-mongodb
     logging:
       driver: "json-file"
       options:
@@ -42,9 +42,9 @@ services:
         target: /data/db
     entrypoint: mongod --bind_ip_all --quiet
     
-  leadschain-abci-develop:
-    image: leadschain/abci:develop
-    container_name: leadschain-abci-develop
+  anychaindb-abci-develop:
+    image: anychaindb/abci:develop
+    container_name: anychaindb-abci-develop
     logging:
       driver: "json-file"
       options:
@@ -58,12 +58,12 @@ services:
     ports:
       - ${ABCI_PORT}:${ABCI_PORT}
     depends_on:
-      - leadschain-mongodb
+      - anychaindb-mongodb
     entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:info
 
-  leadschain-node-develop:
-    image: leadschain/node:develop
-    container_name: leadschain-node-develop
+  anychaindb-node-develop:
+    image: anychaindb/node:develop
+    container_name: anychaindb-node-develop
     logging:
       driver: "json-file"
       options:
@@ -81,15 +81,15 @@ services:
         source: ${DATA_ROOT}
         target: /tendermint
     depends_on:
-      - leadschain-abci-develop
+      - anychaindb-abci-develop
     entrypoint: "sh -c \"\
       tendermint init && \
       tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
       \""
 
-  leadschain-rest-api-develop:
-    image: leadschain/api:develop
-    container_name: leadschain-rest-api-develop
+  anychaindb-rest-api-develop:
+    image: anychaindb/api:develop
+    container_name: anychaindb-rest-api-develop
     logging:
       driver: "json-file"
       options:
@@ -101,7 +101,7 @@ services:
     ports:
       - ${REST_PORT}:${REST_PORT}
     depends_on:
-      - leadschain-abci-develop
+      - anychaindb-abci-develop
     entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:info
 
 networks:

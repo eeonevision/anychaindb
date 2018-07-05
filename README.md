@@ -1,13 +1,13 @@
-# Leadschain
-[![Go Report Card](https://goreportcard.com/badge/github.com/leadschain/leadschain)](https://goreportcard.com/report/github.com/leadschain/leadschain) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+# AnychainDB
+[![Go Report Card](https://goreportcard.com/badge/github.com/leadschain/anychaindb)](https://goreportcard.com/report/github.com/leadschain/anychaindb) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 | Branch  | Tests |
 | ------------- | ------------- |
-| master  | [![Build Status](https://travis-ci.org/leadschain/leadschain.svg?branch=master)](https://travis-ci.org/leadschain/leadschain)  |
-| develop  | [![Build Status](https://travis-ci.org/leadschain/leadschain.svg?branch=develop)](https://travis-ci.org/leadschain/leadschain)  |
+| master  | [![Build Status](https://travis-ci.org/anychaindb/anychaindb.svg?branch=master)](https://travis-ci.org/anychaindb/anychaindb)  |
+| develop  | [![Build Status](https://travis-ci.org/anychaindb/anychaindb.svg?branch=develop)](https://travis-ci.org/anychaindb/anychaindb)  |
 
-Leadschain - secure, fast and open blockchain platform for providing transparancy in interaction between advertisers and webmasters.
-Leadschain uses the modern technologies not only from blockchain world. 
+AnychainDB - secure, fast and open blockchain platform for providing transparancy in interaction between advertisers and webmasters.
+AnychainDB uses the modern technologies not only from blockchain world. 
 Let's take a look at them:
   * [MongoDB] - the high-performable database with full-text search
   * [Tendermint] - the heart of blockchain platform
@@ -48,7 +48,7 @@ Officially we provide the easiest way of installation using docker and docker-co
 Installed `docker ver. 17+` and `docker-compose` tools. Good manual are [this](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1 "this") and [this](https://docs.docker.com/compose/install/#install-compose "this")
 
 #### Choose your type of node
-Leadschain has two type of nodes:
+AnychainDB has two type of nodes:
 - **Validator** node can validate transactions, configured once and need have better hardware than non-validator nodes. If you are a Afiliate Network, choose this type.
 - **Non-validator** node keeps the state and sends the transactions to validator nodes. The can be ease connected to the network because this type is not validates transaction. If you are a Advertiser, choose this type.
 
@@ -70,14 +70,14 @@ Parameters:
 * p2p_port - port for communication between nodes. *Default: 46656*
 * grpc_port - port for RPC client. *Default: 46657*
 * abci_port - port for ABCI application. *Default: 46658*
-* api_port - port for Leadschain REST API. *Default: 8889*
+* api_port - port for AnychainDB REST API. *Default: 8889*
 * node_args - additional arguments for node. If you connect to existing network, you maybe need to set boot nodes addresses, like: `--node_args="--p2p.persistent_peers=id@host:port"`
 
-By default script creates *leadschain* directory in home folder of user, where keeps all data from state. Do not remove it.
+By default script creates *AnychainDB* directory in home folder of user, where keeps all data from state. Do not remove it.
 You may change it by setting another value in ${DATA_ROOT} script variable.
 
 ## Additional docs
-  * [Leadschain REST API] - REST API for Leadschain client
+  * [AnychainDB REST API] - REST API for AnychainDB client
   * [Tendermint Docs] - Tendermint documentation
 
 License
@@ -89,5 +89,5 @@ Apache 2.0
    [Docker]: <https://www.docker.com/>
    [MsgPack]: <https://msgpack.org/>
    [Golang]: <https://golang.org/>
-   [Leadschain REST API]: <https://leadschain1.docs.apiary.io/>
+   [AnychainDB REST API]: <https://leadschain1.docs.apiary.io/>
    [Tendermint Docs]: <http://tendermint.readthedocs.io/en/master/introduction.html>

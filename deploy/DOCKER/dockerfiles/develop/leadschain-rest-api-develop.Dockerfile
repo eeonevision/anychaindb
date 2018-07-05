@@ -20,30 +20,30 @@
 #
 
 # Description:
-#   Builds an image with Leadschain client API installed.
+#   Builds an image with AnychainDB client API installed.
 #
 # Run:
-#   $ docker run leadschain-rest-api
+#   $ docker run anychaindb-rest-api
 
 # Stage Zero. Build sources
 FROM golang:latest
 
-RUN mkdir -p $GOPATH/src/github.com/leadschain/leadschain && \
+RUN mkdir -p $GOPATH/src/github.com/anychaindb/anychaindb && \
 	go get github.com/tools/godep && \
 	go get github.com/tinylib/msgp && \
-    cd $GOPATH/src/github.com/leadschain/leadschain && \
-    git clone https://github.com/leadschain/leadschain . && \
+    cd $GOPATH/src/github.com/anychaindb/anychaindb && \
+    git clone https://github.com/anychaindb/anychaindb . && \
     git checkout develop && \
-	cd $GOPATH/src/github.com/leadschain/leadschain/state && \
+	cd $GOPATH/src/github.com/anychaindb/anychaindb/state && \
 	go generate && \
-	cd $GOPATH/src/github.com/leadschain/leadschain/transaction && \
+	cd $GOPATH/src/github.com/anychaindb/anychaindb/transaction && \
 	go generate && \
-	cd $GOPATH/src/github.com/leadschain/leadschain && \
+	cd $GOPATH/src/github.com/anychaindb/anychaindb && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 godep go install ./... && \
     cd - && \
-    rm -rf $GOPATH/src/github.com/leadschain/leadschain
+    rm -rf $GOPATH/src/github.com/anychaindb/anychaindb
 
-# Stage One. Leadschain REST API
+# Stage One. AnychainDB REST API
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates bash curl jq

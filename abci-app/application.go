@@ -28,8 +28,8 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/leadschain/state"
-	"github.com/leadschain/leadschain/transaction"
+	"github.com/leadschain/anychaindb/state"
+	"github.com/leadschain/anychaindb/transaction"
 	"github.com/tendermint/abci/types"
 )
 
@@ -39,7 +39,7 @@ const (
 	resOffset = 0
 )
 
-// Application inherits BaseApplication and keeps state of leadschain
+// Application inherits BaseApplication and keeps state of anychaindb
 type Application struct {
 	types.BaseApplication
 	state  *state.State

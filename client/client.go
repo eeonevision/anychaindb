@@ -26,11 +26,11 @@ import (
 	"time"
 
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/leadschain/crypto"
-	"github.com/leadschain/leadschain/state"
+	"github.com/leadschain/anychaindb/crypto"
+	"github.com/leadschain/anychaindb/state"
 )
 
-// API is the high level interface for leadschain client applications
+// API is the high level interface for Anychaindb client applications
 type API interface {
 	AccountAPI
 	PayloadAPI

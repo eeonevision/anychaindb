@@ -1,23 +1,23 @@
 FORMAT: 1A
 HOST: http://127.0.0.1:8889
 
-# Leadschain API
+# AnychainDB API
 
-## Getting started with Leadschain APIs
+## Getting started with AnychainDB APIs
 
-Welcome to the Leadschain API reference! 
+Welcome to the AnychainDB API reference! 
 
-Leadschain is distributed, high-loaded, blockchain database for tracking advertisers 
+AnychainDB is distributed, high-loaded, blockchain database for tracking advertisers 
 clicks, transitions and conversions.
 
-The Leadschain API is based on REST. 
-This documentation lists and describes the resources you can used to manipulate objects on the Leadschain Blockchain. 
+The AnychainDB API is based on REST. 
+This documentation lists and describes the resources you can used to manipulate objects on the AnychainDB Blockchain. 
 
 ## Authentication
 
-Leadschain API uses [Public-key authentication](https://en.wikipedia.org/wiki/Public-key_cryptography) method, 
+AnychainDB API uses [Public-key authentication](https://en.wikipedia.org/wiki/Public-key_cryptography) method, 
 that requires to obtain public/pair for account identification. First you create account with Accounts resource.
-After you can get access to post new transition and conversion in Leadschain.
+After you can get access to post new transition and conversion in AnychainDB.
 
 ## Server Responses
 
@@ -27,7 +27,7 @@ After you can get access to post new transition and conversion in Leadschain.
 + 401 Unauthorized - Authentication failed or user does not have permissions for the requested operation (check msg field in response for details).
 + 404 Not Found - Resource was not found.
 + 405 Method Not Allowed - Requested method is not supported for the specified resource.
-+ 429 Too Many Requests - Exceeded Leadschain API limits.
++ 429 Too Many Requests - Exceeded AnychainDB API limits.
 
 ## Accounts [/v1/accounts]
 

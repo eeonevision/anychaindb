@@ -26,7 +26,7 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/leadschain/leadschain/state"
+	"github.com/leadschain/anychaindb/state"
 	"github.com/tendermint/abci/types"
 )
 
@@ -94,7 +94,7 @@ func (app *PersistentApplication) Query(reqQuery types.RequestQuery) types.Respo
 	return app.app.Query(reqQuery)
 }
 
-// InitChain method initializes Leadschain
+// InitChain method initializes Anychaindb
 func (app *PersistentApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 	return types.ResponseInitChain{}
 }

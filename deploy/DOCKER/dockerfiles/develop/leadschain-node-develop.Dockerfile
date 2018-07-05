@@ -20,7 +20,7 @@
 #
 
 # Description:
-#   Builds an image with Leadschain node (Tendermint) installed.
+#   Builds an image with AnychainDB node (Tendermint) installed.
 #
 
 # Stage Zero. Build sources
@@ -36,7 +36,7 @@ RUN mkdir -p /go/src/github.com/tendermint/tendermint && \
     cd - && \
     rm -rf /go/src/github.com/tendermint/tendermint
 
-# Stage One. Tendermint image for Leadschain platform
+# Stage One. Tendermint image for AnychainDB platform
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates bash curl jq

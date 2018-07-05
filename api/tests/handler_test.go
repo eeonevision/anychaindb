@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leadschain/leadschain/api/handler"
+	"github.com/leadschain/anychaindb/api/handler"
 )
 
 var host = flag.String("host", "localhost", "machine host")
@@ -40,7 +40,7 @@ var rpcPort = flag.String("rpcport", "46657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
 
 func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
-	// Send request to Leadschain
+	// Send request to Anychaindb
 	respRaw, err := http.Post("http://"+url+endpoint, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func TestGetAccount(t *testing.T) {
 		return
 	}
 	endpoint = endpoint + "/" + acc1.ID
-	// Find account in Leadschain server
+	// Find account in Anychaindb server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
 		t.Errorf("error in sending GET request: %s", contents)
@@ -253,7 +253,7 @@ func TestGetPayload(t *testing.T) {
 		return
 	}
 	endpoint = endpoint + "/" + cnv1.ID
-	// Find payload in Leadschain server
+	// Find payload in Anychaindb server
 	contents, err := doGETRequest(endpoint, url)
 	if err != nil {
 		t.Errorf("Error in sending GET request: %s", contents)

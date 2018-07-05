@@ -41,7 +41,7 @@ type Request struct {
 	Data      interface{} `json:"data"`
 }
 
-// Result struct represents response from Leadschain API.
+// Result struct represents response from Anychaindb API.
 type Result struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`

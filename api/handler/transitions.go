@@ -32,32 +32,26 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Payload struct keeps transaction data related fields.
-//   - PublicData keeps open data;
-//   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
-//   - CreatedAt is date of object creation in UNIX time (nanoseconds).
-type Payload struct {
-	ID                string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	SenderAccountID   string  `msg:"sender_account_id" json:"sender_account_id" mapstructure:"sender_account_id" bson:"sender_account_id"`
-	ReceiverAccountID string  `msg:"receiver_account_id" json:"receiver_account_id" mapstructure:"receiver_account_id" bson:"receiver_account_id"`
-	PublicData        string  `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
-	PrivateData       string  `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	CreatedAt         float64 `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
+// Transition struct describes transition related fields
+// All fields, except AdvertiserAccountID and AffiliateAccountID are optional.
+//
+// AdvertiserAccountID - unique identifier of advertiser account
+// AffiliateAccountID - unique identifier of affiliate account
+// ClickID - unique identifier of user's click (usually transmitted from affiliate network)
+// StreamID (a.k.a. PlatformID) - uniques identifier of webmaster's platform in afiliate network
+// OfferID - unique identifier of offer in affiliate network
+// ExpiresIn - Unix timestamp of transition expiration (in seconds)
+type Transition struct {
+	AdvertiserAccountID string `json:"advertiser_account_id" mapstructure:"advertiser_account_id"`
+	AffiliateAccountID  string `json:"affiliate_account_id" mapstructure:"affiliate_account_id"`
+	ClickID             string `json:"click_id" mapstructure:"click_id"`
+	StreamID            string `json:"stream_id" mapstructure:"stream_id"`
+	OfferID             string `json:"offer_id" mapstructure:"offer_id"`
+	ExpiresIn           int64  `json:"expires_in" mapstructure:"expires_in"`
 }
 
-// Metadata struct keep information about requester remote address.
-type Metadata struct {
-	RemoteAddr string `msg:"remote_addr" json:"remote_addr" mapstructure:"remote_addr" bson:"remote_addr"`
-}
-
-// PrivateDataWrapper structs wraps private data from requester with metadata.
-type PrivateDataWrapper struct {
-	PrivateData interface{} `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	*Metadata   `msg:"metadata" json:"metadata" mapstructure:"metadata" bson:"metadata"`
-}
-
-// PostPayloadsHandler uses FastAPI for sends new transaction data requests in async mode to blockchain.
-func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+// PostTransitionsHandler uses FastAPI for sends new transitions requests in async mode to blockchain
+func PostTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	// Parse form's JSON data
@@ -69,54 +63,37 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	var data Payload
+	var data Transition
 	if err := mapstructure.Decode(req.Data, &data); err != nil {
-		writeResult(http.StatusBadRequest, "Payload decode error: "+err.Error(), nil, w)
+		writeResult(http.StatusBadRequest, "Transition decode error: "+err.Error(), nil, w)
 		return
 	}
 	defer r.Body.Close()
 
-	// Add payload to blockchain
+	// Add transition to blockchain
 	key, err := crypto.NewFromStrings(req.PubKey, req.PrivKey)
 	if err != nil {
 		writeResult(http.StatusUnauthorized, err.Error(), nil, w)
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	privMrsh, err := json.Marshal(
-		PrivateDataWrapper{
-			PrivateData: data.PrivateData,
-			Metadata: &Metadata{
-				RemoteAddr: r.RemoteAddr,
-			},
-		},
-	)
-	if err != nil {
-		writeResult(http.StatusBadRequest, err.Error(), nil, w)
-		return
-	}
-	pubMrsh, err := json.Marshal(data.PublicData)
-	if err != nil {
-		writeResult(http.StatusBadRequest, err.Error(), nil, w)
-		return
-	}
-
-	id, err := api.AddPayload(req.AccountID, data.ReceiverAccountID, pubMrsh, privMrsh)
+	id, err := api.AddTransition(data.AffiliateAccountID, data.AdvertiserAccountID, data.ClickID, data.StreamID,
+		data.OfferID, data.ExpiresIn)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
 
 	// OK
-	writeResult(http.StatusAccepted, "Payload added", Payload{ID: id}, w)
+	writeResult(http.StatusAccepted, "Transition added", id, w)
 }
 
-// GetPayloadsHandler uses BaseAPI for search and list transaction data.
+// GetTransitionsHandler uses BaseAPI for search and list transitions.
 // Query parameters: Query, Limit, Offset can be optional.
 // Query - MongoDB query string.
 // Limit - maximum 500 items.
 // Offset - default 0.
-func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func GetTransitionsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	var query interface{}
@@ -161,23 +138,23 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		Offset: offset,
 	}
 	searchReqStr, _ := json.Marshal(searchReq)
-	cnv, err := api.SearchPayloads(searchReqStr)
+	trs, err := api.SearchTransitions(searchReqStr)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Empty payloads list
-	if cnv == nil {
+	// Transition not found
+	if trs == nil {
 		writeResult(http.StatusNotFound, "Empty list", nil, w)
 		return
 	}
-	writeResult(http.StatusOK, "OK", cnv, w)
+	writeResult(http.StatusOK, "OK", trs, w)
 	return
 }
 
-// GetPayloadDetailsHandler uses BaseAPI for get payload details by it id.
+// GetTransitionDetailsHandler uses BaseAPI for get transition details by it id.
 // Query parameters ID is required.
-func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func GetTransitionDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	id := ps.ByName("id")
@@ -187,16 +164,16 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 	api := client.NewAPI(endpoint, nil, "")
-	cnv, err := api.GetPayload(id)
+	trs, err := api.GetTransition(id)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Payload not found
-	if cnv == nil {
+	// Transition not found
+	if trs == nil {
 		writeResult(http.StatusNotFound, "Not Found", nil, w)
 		return
 	}
-	writeResult(http.StatusOK, "OK", cnv, w)
+	writeResult(http.StatusOK, "OK", trs, w)
 	return
 }

@@ -20,44 +20,37 @@
 #
 
 # Description:
-#   Builds an image with Leadschain node (Tendermint) installed.
+#   Builds an image with AnychainDB client API installed.
 #
+# Run:
+#   $ docker run anychaindb-rest-api
 
 # Stage Zero. Build sources
 FROM golang:latest
 
-RUN mkdir -p /go/src/github.com/tendermint/tendermint && \
-    cd /go/src/github.com/tendermint/tendermint && \
-    git clone https://github.com/tendermint/tendermint . && \
+RUN mkdir -p $GOPATH/src/github.com/anychaindb/anychaindb && \
+	go get github.com/tools/godep && \
+	go get github.com/tinylib/msgp && \
+    cd $GOPATH/src/github.com/anychaindb/anychaindb && \
+    git clone https://github.com/anychaindb/anychaindb . && \
     git checkout master && \
-    make get_tools && \
-    make get_vendor_deps && \
-    make install && \
+	cd $GOPATH/src/github.com/anychaindb/anychaindb/state && \
+	go generate && \
+	cd $GOPATH/src/github.com/anychaindb/anychaindb/transaction && \
+	go generate && \
+	cd $GOPATH/src/github.com/anychaindb/anychaindb && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 godep go install ./... && \
     cd - && \
-    rm -rf /go/src/github.com/tendermint/tendermint
+    rm -rf $GOPATH/src/github.com/anychaindb/anychaindb
 
-# Stage One. Tendermint image for Leadschain platform
+# Stage One. AnychainDB REST API
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates bash curl jq
 
-ENV DATA_ROOT /tendermint
-ENV TMHOME $DATA_ROOT
-
-RUN addgroup tmuser && \
-    adduser -S -G tmuser tmuser
-
-RUN mkdir -p "$DATA_ROOT/config"
-
-ARG config
-
-# validator genesis and config files if exists
-COPY $config ${DATA_ROOT}/config/
-
-VOLUME $DATA_ROOT
-
 WORKDIR /usr/bin/
 
-COPY --from=0 /go/bin/tendermint .
+COPY --from=0 /go/bin/tmlc-api .
 
-ENTRYPOINT [ "tendermint", "version" ]
+ENTRYPOINT [ "tmlc-api", "--help" ]
+

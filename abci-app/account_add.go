@@ -24,9 +24,9 @@ package app
 import (
 	"errors"
 
-	"github.com/leadschain/leadschain/crypto"
-	"github.com/leadschain/leadschain/state"
-	"github.com/leadschain/leadschain/transaction"
+	"github.com/leadschain/anychaindb/crypto"
+	"github.com/leadschain/anychaindb/state"
+	"github.com/leadschain/anychaindb/transaction"
 )
 
 func checkAccountAddTransaction(tx *transaction.Transaction, s *state.State) error {

@@ -11,6 +11,6 @@ if [ -z "$TAG" ]; then
 fi
 
 echo "Build two docker images with latest and ${TAG} tags ..."
-docker build -t "leadschain/node:latest" -t "leadschain/node:$TAG" -f dockerfiles/leadschain-node.Dockerfile .
-docker build -t "leadschain/abci:latest" -t "leadschain/abci:$TAG" -f dockerfiles/leadschain-abci.Dockerfile .
-docker build -t "leadschain/api:latest" -t "leadschain/api:$TAG" -f dockerfiles/leadschain-rest-api.Dockerfile .
+docker build -t "anychaindb/node:latest" -t "anychaindb/node:$TAG" -f dockerfiles/anychaindb-node.Dockerfile .
+docker build -t "anychaindb/abci:latest" -t "anychaindb/abci:$TAG" -f dockerfiles/anychaindb-abci.Dockerfile .
+docker build -t "anychaindb/api:latest" -t "anychaindb/api:$TAG" -f dockerfiles/anychaindb-rest-api.Dockerfile .
