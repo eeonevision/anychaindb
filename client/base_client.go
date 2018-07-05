@@ -96,68 +96,12 @@ func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error)
 	return acc, nil
 }
 
-func (c *BaseClient) AddTransition(tr *state.Transition) error {
-	txBytes, err := tr.MarshalMsg(nil)
-	if err != nil {
-		return err
-	}
-	tx := transaction.New(transaction.TransitionAdd, c.AccountID, txBytes)
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxAsync(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.Code != 0 {
-		return fmt.Errorf("%v: %s", res.Code, res.Log)
-	}
-	return nil
-}
-
-func (c *BaseClient) GetTransition(id string) (*state.Transition, error) {
-	resp, err := c.tm.ABCIQuery("transitions", []byte(id))
-	if err != nil {
-		return nil, err
-	}
-	tr := &state.Transition{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &tr); err != nil {
-		return nil, err
-	}
-	return tr, nil
-}
-
-func (c *BaseClient) ListTransitions() ([]state.Transition, error) {
-	resp, err := c.tm.ABCIQuery("transitions", nil)
-	if err != nil {
-		return nil, err
-	}
-	tr := []state.Transition{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &tr); err != nil {
-		return nil, err
-	}
-	return tr, nil
-}
-
-func (c *BaseClient) SearchTransitions(searchQuery []byte) ([]state.Transition, error) {
-	resp, err := c.tm.ABCIQuery("transitions/search", searchQuery)
-	if err != nil {
-		return nil, err
-	}
-	tr := []state.Transition{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &tr); err != nil {
-		return nil, err
-	}
-	return tr, nil
-}
-
-func (c *BaseClient) AddConversion(cv *state.Conversion) error {
+func (c *BaseClient) AddPayload(cv *state.Payload) error {
 	txBytes, err := cv.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.ConversionAdd, c.AccountID, txBytes)
+	tx := transaction.New(transaction.PayloadAdd, c.AccountID, txBytes)
 	if err := tx.Sign(c.Key); err != nil {
 		return err
 	}
@@ -172,39 +116,38 @@ func (c *BaseClient) AddConversion(cv *state.Conversion) error {
 	return nil
 }
 
-func (c *BaseClient) GetConversion(id string) (*state.Conversion, error) {
-	resp, err := c.tm.ABCIQuery("conversions", []byte(id))
+func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
+	resp, err := c.tm.ABCIQuery("payloads", []byte(id))
 	if err != nil {
 		return nil, err
 	}
-	cv := &state.Conversion{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &cv); err != nil {
+	res := &state.Payload{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
 		return nil, err
 	}
-	fmt.Println(cv)
-	return cv, nil
+	return res, nil
 }
 
-func (c *BaseClient) ListConversions() ([]state.Conversion, error) {
-	resp, err := c.tm.ABCIQuery("conversions", nil)
+func (c *BaseClient) ListPayloads() ([]state.Payload, error) {
+	resp, err := c.tm.ABCIQuery("payloads", nil)
 	if err != nil {
 		return nil, err
 	}
-	cv := []state.Conversion{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &cv); err != nil {
+	res := []state.Payload{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
 		return nil, err
 	}
-	return cv, nil
+	return res, nil
 }
 
-func (c *BaseClient) SearchConversions(searchQuery []byte) ([]state.Conversion, error) {
-	resp, err := c.tm.ABCIQuery("conversions/search", searchQuery)
+func (c *BaseClient) SearchPayloads(searchQuery []byte) ([]state.Payload, error) {
+	resp, err := c.tm.ABCIQuery("payloads/search", searchQuery)
 	if err != nil {
 		return nil, err
 	}
-	cv := []state.Conversion{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &cv); err != nil {
+	res := []state.Payload{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
 		return nil, err
 	}
-	return cv, nil
+	return res, nil
 }

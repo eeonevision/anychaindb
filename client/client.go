@@ -25,8 +25,6 @@ import (
 	"encoding/base64"
 	"time"
 
-	"golang.org/x/crypto/blake2b"
-
 	"github.com/globalsign/mgo/bson"
 	"github.com/leadschain/leadschain/crypto"
 	"github.com/leadschain/leadschain/state"
@@ -35,8 +33,7 @@ import (
 // API is the high level interface for leadschain client applications
 type API interface {
 	AccountAPI
-	TransitionAPI
-	ConversionAPI
+	PayloadAPI
 }
 
 // AccountAPI describes all account related functions
@@ -47,20 +44,12 @@ type AccountAPI interface {
 	SearchAccounts(query []byte) ([]state.Account, error)
 }
 
-// TransitionAPI interface provides all transition related methods
-type TransitionAPI interface {
-	AddTransition(affiliateID, advertiserID, clickID, streamID, offerID string, expiresIn int64) (ID string, err error)
-	GetTransition(ID string) (*state.Transition, error)
-	ListTransitions() ([]state.Transition, error)
-	SearchTransitions(query []byte) ([]state.Transition, error)
-}
-
-// ConversionAPI interface provides all conversion related methods
-type ConversionAPI interface {
-	AddConversion(affiliateID string, privateData, publicData []byte) (ID string, err error)
-	GetConversion(ID string) (*state.Conversion, error)
-	ListConversions() ([]state.Conversion, error)
-	SearchConversions(query []byte) ([]state.Conversion, error)
+// PayloadAPI interface provides all transaction data related methods
+type PayloadAPI interface {
+	AddPayload(senderAccountID, receiverAccountID string, publicData, privateData []byte) (ID string, err error)
+	GetPayload(ID string) (*state.Payload, error)
+	ListPayloads() ([]state.Payload, error)
+	SearchPayloads(query []byte) ([]state.Payload, error)
 }
 
 // NewAPI constructs a new API instances based on an http transport
@@ -101,85 +90,48 @@ func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
 	return api.base.SearchAccounts(query)
 }
 
-func (api *apiClient) AddTransition(affiliateID, advertiserID, clickID, streamID, offerID string, expiresIn int64) (ID string, err error) {
+func (api *apiClient) AddPayload(senderAccountID, receiverAccountID string, publicData, privateData []byte) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
 	now := time.Now()
 	createdAt := now.UTC().UnixNano()
-	if err := api.fast.AddTransition(&state.Transition{
-		ID:                  id,
-		AdvertiserAccountID: advertiserID,
-		AffiliateAccountID:  affiliateID,
-		ClickID:             clickID,
-		StreamID:            streamID,
-		OfferID:             offerID,
-		CreatedAt:           float64(createdAt),
-		ExpiresIn:           expiresIn,
+
+	// Get receiver's public key
+	receiver, err := api.GetAccount(receiverAccountID)
+	if err != nil {
+		return "", err
+	}
+
+	// ECDH encrypted private data with public key of receiver
+	receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
+	if err != nil {
+		return "", err
+	}
+	privateDataEnc, err := receiverPubKey.Encrypt(privateData)
+	if err != nil {
+		return "", err
+	}
+
+	if err = api.fast.AddPayload(&state.Payload{
+		ID:                id,
+		SenderAccountID:   senderAccountID,
+		ReceiverAccountID: receiverAccountID,
+		PublicData:        string(publicData),
+		PrivateData:       base64.StdEncoding.EncodeToString(privateDataEnc),
+		CreatedAt:         float64(createdAt),
 	}); err != nil {
 		return "", err
 	}
 	return id, nil
 }
 
-func (api *apiClient) GetTransition(id string) (*state.Transition, error) {
-	return api.base.GetTransition(id)
+func (api *apiClient) GetPayload(id string) (*state.Payload, error) {
+	return api.base.GetPayload(id)
 }
 
-func (api *apiClient) ListTransitions() ([]state.Transition, error) {
-	return api.base.ListTransitions()
+func (api *apiClient) ListPayloads() ([]state.Payload, error) {
+	return api.base.ListPayloads()
 }
 
-func (api *apiClient) SearchTransitions(query []byte) ([]state.Transition, error) {
-	return api.base.SearchTransitions(query)
-}
-
-func (api *apiClient) AddConversion(affiliateID string, privateData, publicData []byte) (ID string, err error) {
-	id := bson.NewObjectId().Hex()
-	now := time.Now()
-	createdAt := now.UTC().UnixNano()
-
-	// Get affiliate's public key
-	affiliate, err := api.GetAccount(affiliateID)
-	if err != nil {
-		return "", err
-	}
-
-	// ECDH encrypted advertiser's data with public key of affiliate
-	affiliatePubKey, err := crypto.NewFromStrings(affiliate.PubKey, "")
-	if err != nil {
-		return "", err
-	}
-	privateDataEnc, err := affiliatePubKey.Encrypt(privateData)
-	if err != nil {
-		return "", err
-	}
-
-	// BLAKE2B 256-bit hashed public data
-	blake2BHash, _ := blake2b.New256(nil)
-	_, err = blake2BHash.Write(publicData)
-	if err != nil {
-		return "", err
-	}
-
-	if err = api.fast.AddConversion(&state.Conversion{
-		ID:                 id,
-		AffiliateAccountID: affiliateID,
-		PrivateData:        base64.StdEncoding.EncodeToString(privateDataEnc),
-		PublicData:         base64.StdEncoding.EncodeToString(blake2BHash.Sum(nil)),
-		CreatedAt:          float64(createdAt),
-	}); err != nil {
-		return "", err
-	}
-	return id, nil
-}
-
-func (api *apiClient) GetConversion(id string) (*state.Conversion, error) {
-	return api.base.GetConversion(id)
-}
-
-func (api *apiClient) ListConversions() ([]state.Conversion, error) {
-	return api.base.ListConversions()
-}
-
-func (api *apiClient) SearchConversions(query []byte) ([]state.Conversion, error) {
-	return api.base.SearchConversions(query)
+func (api *apiClient) SearchPayloads(query []byte) ([]state.Payload, error) {
+	return api.base.SearchPayloads(query)
 }

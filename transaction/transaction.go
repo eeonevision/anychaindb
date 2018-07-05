@@ -46,9 +46,8 @@ type Transaction struct {
 type TransactionType string
 
 const (
-	AccountAdd    TransactionType = "add-account"
-	TransitionAdd TransactionType = "add-transition"
-	ConversionAdd TransactionType = "add-conversion"
+	AccountAdd TransactionType = "add-account"
+	PayloadAdd TransactionType = "add-payload"
 )
 
 func (t *Transaction) FromBytes(bs []byte) error {

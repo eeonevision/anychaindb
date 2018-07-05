@@ -36,7 +36,7 @@ func checkAccountAddTransaction(tx *transaction.Transaction, s *state.State) err
 		return err
 	}
 	if s.HasAccount(data.ID) {
-		return errors.New("Account exists")
+		return errors.New("account exists")
 	}
 	if _, err := crypto.NewFromStrings(data.PubKey, ""); err != nil {
 		return err
