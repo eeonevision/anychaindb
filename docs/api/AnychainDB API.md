@@ -150,9 +150,9 @@ Unique payload identifier in blockchain
 Unique sender account identifier in blockchain (i.e. Advertiser)
 + receiver_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique receiver account identifier in blockchain (i.e. CPA Network)
-+ public_data: test_public (string)
++ public_data: anypublicdata (string)
 Public data available to all
-+ private_data: test_private (string)
++ private_data: anyprivatedata (string)
 Private data encrypted with public key of receiver
 + created_at: 2512351252135 (number)
 Unix time (seconds) datetime of conversion
@@ -161,7 +161,7 @@ Unix time (seconds) datetime of conversion
 
 + receiver_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique receiver account identifier in blockchain (i.e. CPA Network)
-+ public_data: any_public_data (string)
++ public_data: anypublicdata (string)
 Public data available to all
-+ private_data: any_private_data (string)
++ private_data: anyprivatedata (string)
 Private data encrypted with public key of receiver

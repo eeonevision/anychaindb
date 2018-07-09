@@ -6,20 +6,13 @@
 | master  | [![Build Status](https://travis-ci.org/eeonevision/anychaindb.svg?branch=master)](https://travis-ci.org/eeonevision/anychaindb)  |
 | develop  | [![Build Status](https://travis-ci.org/eeonevision/anychaindb.svg?branch=develop)](https://travis-ci.org/eeonevision/anychaindb)  |
 
-AnychainDB - secure, fast and open blockchain database.
-AnychainDB uses the modern technologies not only from blockchain world. 
-Let's take a look at them:
-  * [MongoDB] - the high-performable database with full-text search
-  * [Tendermint] - the heart of blockchain platform
-  * [Docker] - all components of platform wrapps in containers for fast deploy and ease to use
-  * [MsgPack] - transport between messages in platform
-  * [Golang] - fast and beautiful language
+AnychainDB is distributed blockchain database suitable for any purposes.
 
 ## Features
   * Blazing fast. The performance for data writing/reading is above of 2000 tx/s
   * MongoDB full-text search queries
   * Secure and private. AnychainDB allows to keep **any** kind of data in two ways: open *public* and **ECDH** encrypted *private*
-  * Easy to deploy and use. Developed REST-API
+  * Easy to deploy and use. Developed REST-API (see link in additional docs)
   * Clean, documented and tested code
 
 ## Installation
@@ -34,7 +27,7 @@ AnychainDB has two type of nodes:
 
 #### Configure network
 If you want to connect to existing network, then all you need is *genesis.json* and *config.toml* files from the ran network. Place in to config folder and follow to the next section. 
-Configure a new network is little more sophisticated. Firstly you need to generate new config for validator node. Best way is use command from tendermint consensus engine: ``tendermint init``. It creates all required configuration files for validator node (*config.toml*, *genesis.json*, *node_key.json* and *priv_validator.json*).
+Configure a new network is little more sophisticated. Firstly you need to generate new config for validator node. Best way is use command from tendermint: ``tendermint init``. It creates all required configuration files for validator node (*config.toml*, *genesis.json*, *node_key.json* and *priv_validator.json*).
 
 Examples of network configs placed [here](deploy/DOCKER/examples/schemas).
 #### Deploy network
@@ -57,6 +50,13 @@ Parameters:
 
 By default script creates *AnychainDB* directory in home folder of user, where keeps all data from state. Do not remove it.
 You may change it by setting another value in ${DATA_ROOT} script variable.
+
+## Built With
+  * [MongoDB] - the high-performable database with full-text search
+  * [Tendermint] - the heart of blockchain platform
+  * [Docker] - all components of platform wrapps in containers for fast deploy and ease to use
+  * [MsgPack] - transport between messages in platform
+  * [Golang] - fast and beautiful language
 
 ## Additional docs
   * [AnychainDB REST API] - REST API for AnychainDB client
