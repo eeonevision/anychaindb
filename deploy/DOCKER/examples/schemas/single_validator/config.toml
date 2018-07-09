@@ -5,10 +5,10 @@
 
 # TCP or UNIX socket address of the ABCI application,
 # or the name of an ABCI application compiled in with the Tendermint binary
-proxy_app = "tcp://127.0.0.1:46658"
+proxy_app = "tcp://127.0.0.1:26658"
 
 # A custom human readable name for this node
-moniker = "anychaindb-validator-1"
+moniker = "anychaindb-single"
 
 # If this node is many blocks behind the tip of the chain, FastSync
 # allows them to catchup quickly by downloading blocks in parallel
@@ -22,7 +22,7 @@ db_backend = "leveldb"
 db_path = "data"
 
 # Output level for logging, including package level options
-log_level = "main:info,state:info,*:error"
+log_level = "*:error"
 
 ##### additional base config options #####
 
@@ -51,20 +51,40 @@ filter_peers = false
 [rpc]
 
 # TCP or UNIX socket address for the RPC server to listen on
-laddr = "tcp://0.0.0.0:46657"
+laddr = "tcp://0.0.0.0:26657"
 
 # TCP or UNIX socket address for the gRPC server to listen on
 # NOTE: This server only supports /broadcast_tx_commit
 grpc_laddr = ""
 
+# Maximum number of simultaneous connections.
+# Does not include RPC (HTTP&WebSocket) connections. See max_open_connections
+# If you want to accept more significant number than the default, make sure
+# you increase your OS limits.
+# 0 - unlimited.
+grpc_max_open_connections = 5000
+
 # Activate unsafe RPC commands like /dial_seeds and /unsafe_flush_mempool
 unsafe = false
+
+# Maximum number of simultaneous connections (including WebSocket).
+# Does not include gRPC connections. See grpc_max_open_connections
+# If you want to accept more significant number than the default, make sure
+# you increase your OS limits.
+# 0 - unlimited.
+max_open_connections = 5000
 
 ##### peer to peer configuration options #####
 [p2p]
 
 # Address to listen for incoming connections
-laddr = "tcp://0.0.0.0:46656"
+laddr = "tcp://0.0.0.0:26656"
+
+# Address to advertise to peers for them to dial
+# If empty, will use the same port as the laddr,
+# and will introspect on the listener or use UPnP
+# to figure out the address.
+external_address = ""
 
 # Comma separated list of seed nodes to connect to
 seeds = ""
@@ -72,6 +92,9 @@ seeds = ""
 # Comma separated list of nodes to keep persistent connections to
 # Do not add private peers to this list if you don't want them advertised
 persistent_peers = ""
+
+# UPNP port forwarding
+upnp = false
 
 # Path to address book
 addr_book_file = "config/addrbook.json"
@@ -103,9 +126,6 @@ pex = true
 # Does not work if the peer-exchange reactor is disabled.
 seed_mode = false
 
-# Authenticated encryption
-auth_enc = true
-
 # Comma separated list of peer IDs to keep private (will not be gossiped to other peers)
 private_peer_ids = ""
 
@@ -117,11 +137,16 @@ recheck_empty = false
 broadcast = true
 wal_dir = "data/mempool.wal"
 
+# size of the mempool
+size = 1000000
+
+# size of the cache (used to filter transactions we saw earlier)
+cache_size = 1000000
+
 ##### consensus configuration options #####
 [consensus]
 
 wal_file = "data/cs.wal/wal"
-wal_light = true
 
 # All timeouts are in milliseconds
 timeout_propose = 3000
@@ -141,7 +166,7 @@ max_block_size_bytes = 6000000
 
 # EmptyBlocks mode and possible interval between empty blocks in seconds
 create_empty_blocks = true
-create_empty_blocks_interval = 90
+create_empty_blocks_interval = 300
 
 # Reactor sleep duration parameters are in milliseconds
 peer_gossip_sleep_duration = 100
@@ -168,3 +193,14 @@ index_tags = ""
 # desirable (see the comment above). IndexTags has a precedence over
 # IndexAllTags (i.e. when given both, IndexTags will be indexed).
 index_all_tags = false
+
+##### instrumentation configuration options #####
+[instrumentation]
+
+# When true, Prometheus metrics are served under /metrics on
+# PrometheusListenAddr.
+# Check out the documentation for the list of available metrics.
+prometheus = false
+
+# Address to listen for Prometheus collector(s) connections
+prometheus_listen_addr = ":26660"

@@ -7,10 +7,10 @@ export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
 export DB_PORT=27017
-export P2P_PORT=46656
-export GRPC_PORT=46657
-export ABCI_PORT=46658
-export REST_PORT=8889
+export P2P_PORT=26656
+export GRPC_PORT=26657
+export ABCI_PORT=26658
+export REST_PORT=26659
 export NODE_ARGS=""
 
 # set environment variables

@@ -42,10 +42,10 @@ Parameters:
 * **config** - full path to config folder. *Example: /home/ubuntu/CONFIG_FOLDER*
 * clean_all - clean all cache and reset anychaindb state. *Default: true*
 * db_port - port for communication with MongoDB container. *Default: 27017*
-* p2p_port - port for communication between nodes. *Default: 46656*
-* grpc_port - port for RPC client. *Default: 46657*
-* abci_port - port for ABCI application. *Default: 46658*
-* api_port - port for AnychainDB REST API. *Default: 8889*
+* p2p_port - port for communication between nodes. *Default: 26656*
+* grpc_port - port for RPC client. *Default: 26657*
+* abci_port - port for ABCI application. *Default: 26658*
+* api_port - port for AnychainDB REST API. *Default: 26659*
 * node_args - additional arguments for node. If you connect to existing network, you maybe need to set boot nodes addresses, like: `--node_args="--p2p.persistent_peers=id@host:port"`
 
 By default script creates *AnychainDB* directory in home folder of user, where keeps all data from state. Do not remove it.
