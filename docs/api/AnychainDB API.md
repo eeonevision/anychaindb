@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: http://127.0.0.1:8889
+HOST: http://127.0.0.1:26659
 
 # AnychainDB API
 
@@ -49,9 +49,13 @@ Every users have their unique accounts in the system.
 This resource is intended for listing, sending and view details about transaction data (payload).
 
 Payload contains from two main parts: private and public data. You can place any data to this fields.
-*Private data* encrypted by ECDH algorithm with public key of receiver. For encryption of private data AnychainDB uses [Elliptic-curve Diffie–Hellman](https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman) protocol, that also uses ECDSA but for assymetric data encryption.
-*Public data* keeps any open data without encryption.
+
+***Private data*** encrypted by ECDH algorithm with public key of receiver. For encryption of private data AnychainDB uses [Elliptic-curve Diffie–Hellman](https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman) protocol, that also uses ECDSA but for assymetric data encryption.
+
+***Public data*** keeps any open data without encryption.
 ReceiverAccountID fields contains information about receiver's account, that decrypts private data with it private key.
+
+You can place **any** structure/interface to that fields.
 
 ### View a payloads list [GET]
 
@@ -146,22 +150,18 @@ Unique payload identifier in blockchain
 Unique sender account identifier in blockchain (i.e. Advertiser)
 + receiver_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique receiver account identifier in blockchain (i.e. CPA Network)
-+ public_data: test click (string)
++ public_data: test_public (string)
 Public data available to all
-+ private_data: test stream (string)
++ private_data: test_private (string)
 Private data encrypted with public key of receiver
 + created_at: 2512351252135 (number)
 Unix time (seconds) datetime of conversion
 
 ## PayloadPost (object)
 
-+ _id: 3acaad9v49bf591f212ad7b (string)
-Unique payload identifier in blockchain
 + receiver_account_id: 5acacd9b6d9bf091f214ad7b (string)
 Unique receiver account identifier in blockchain (i.e. CPA Network)
-+ public_data: test click (string)
++ public_data: any_public_data (string)
 Public data available to all
-+ private_data: test stream (string)
++ private_data: any_private_data (string)
 Private data encrypted with public key of receiver
-+ created_at: 2512351252135 (number)
-Unix time (seconds) datetime of conversion
