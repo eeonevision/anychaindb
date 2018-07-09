@@ -35,8 +35,8 @@ import (
 )
 
 var host = flag.String("host", "localhost", "machine host")
-var apiPort = flag.String("apiport", "8889", "api port")
-var rpcPort = flag.String("rpcport", "46657", "rpc port")
+var apiPort = flag.String("apiport", "26659", "api port")
+var rpcPort = flag.String("rpcport", "26657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
 
 func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
@@ -228,7 +228,7 @@ func TestCreatePayload(t *testing.T) {
 		// Wait for transaction approve
 		time.Sleep(time.Second * 5)
 	}
-	t.Logf("Added payload: %v", data)
+	t.Logf("Added payload: %v", string(data))
 }
 
 func TestGetPayload(t *testing.T) {

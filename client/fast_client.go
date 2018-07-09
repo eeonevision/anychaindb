@@ -49,6 +49,9 @@ func (c *FastClient) BroadcastTxAsync(tx []byte) (*http.Response, error) {
 	ba := base64.StdEncoding.EncodeToString(tx)
 	txData := fmt.Sprintf(`{"jsonrpc":"2.0","id":"anything","method":"broadcast_tx_async","params": {"tx": "%s"}}`, ba)
 	req, err := http.NewRequest("POST", c.Endpoint, bytes.NewBuffer([]byte(txData)))
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Content-Type", "text/plain")
 
 	resp, err := c.client.Do(req)
