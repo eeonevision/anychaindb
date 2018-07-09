@@ -16,7 +16,7 @@ Let's take a look at them:
   * [Golang] - fast and beautiful language
 
 ## Installation
-Officially we provide the easiest way of installation using docker and docker-compose tools.
+Officially AnychainDB provides the easiest way of installation using docker and docker-compose tools.
 #### Prerequirements
 Installed `docker ver. 17+` and `docker-compose` tools. Good manual are [this](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1 "this") and [this](https://docs.docker.com/compose/install/#install-compose "this")
 
@@ -27,7 +27,7 @@ AnychainDB has two type of nodes:
 
 #### Configure network
 If you want to connect to existing network, then all you need is *genesis.json* and *config.toml* files from the ran network. Place in to config folder and follow to the next section. 
-Configure a new network is little more sophisticated. Firstly you need to deploy a validator nodes, then join non-validator nodes to network. About this we will discuss later... (todo)
+Configure a new network is little more sophisticated. Firstly you need to generate new config for validator node. Best way is use command from tendermint consensus engine: ``tendermint init``. It creates all required configuration files for validator node (*config.toml*, *genesis.json*, *node_key.json* and *priv_validator.json*).
 
 Examples of network configs placed [here](deploy/DOCKER/examples/schemas).
 #### Deploy network
