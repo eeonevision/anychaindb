@@ -15,6 +15,13 @@ Let's take a look at them:
   * [MsgPack] - transport between messages in platform
   * [Golang] - fast and beautiful language
 
+## Features
+  * Blazing fast. The performance for data writing/reading is above of 2000 tx/s
+  * MongoDB full-text search queries
+  * Secure and private. AnychainDB allows to keep **any** kind of data in two ways: open *public* and **ECDH** encrypted *private*
+  * Easy to deploy and use. Developed REST-API
+  * Clean, documented and tested code
+
 ## Installation
 Officially AnychainDB provides the easiest way of installation using docker and docker-compose tools.
 #### Prerequirements
@@ -54,6 +61,9 @@ You may change it by setting another value in ${DATA_ROOT} script variable.
 ## Additional docs
   * [AnychainDB REST API] - REST API for AnychainDB client
   * [Tendermint Docs] - Tendermint documentation
+
+## Contributing
+Project is opensource and open for contributors and maintainers. You are welcome to do any *positive* changes in project :)
 
 License
 ----
