@@ -23,6 +23,7 @@ package client
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"time"
 
 	"github.com/eeonevision/anychaindb/crypto"
@@ -46,7 +47,7 @@ type AccountAPI interface {
 
 // PayloadAPI interface provides all transaction data related methods
 type PayloadAPI interface {
-	AddPayload(senderAccountID, receiverAccountID string, publicData, privateData []byte) (ID string, err error)
+	AddPayload(senderAccountID string, publicData, privateData []byte) (ID string, err error)
 	GetPayload(ID string) (*state.Payload, error)
 	ListPayloads() ([]state.Payload, error)
 	SearchPayloads(query []byte) ([]state.Payload, error)
@@ -90,34 +91,48 @@ func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
 	return api.base.SearchAccounts(query)
 }
 
-func (api *apiClient) AddPayload(senderAccountID, receiverAccountID string, publicData, privateData []byte) (ID string, err error) {
+func (api *apiClient) AddPayload(senderAccountID string, publicData, privateData []byte) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
 	now := time.Now()
 	createdAt := now.UTC().UnixNano()
 
-	// Get receiver's public key
-	receiver, err := api.GetAccount(receiverAccountID)
+	// Unmarshal private data
+	var privData []*state.PrivateData
+	err = json.Unmarshal(privateData, &privData)
 	if err != nil {
 		return "", err
 	}
 
-	// ECDH encrypted private data with public key of receiver
-	receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
-	if err != nil {
-		return "", err
-	}
-	privateDataEnc, err := receiverPubKey.Encrypt(privateData)
-	if err != nil {
-		return "", err
+	for _, data := range privData {
+		// Get receiver's public key
+		receiver, err := api.GetAccount(data.ReceiverAccountID)
+		if err != nil {
+			return "", err
+		}
+		receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
+		if err != nil {
+			return "", err
+		}
+		// Marshal private data of receiver
+		privMrsh, err := json.Marshal(data.Data)
+		if err != nil {
+			return "", err
+		}
+		// ECDH encrypted private data with public key of receiver
+		privateDataEnc, err := receiverPubKey.Encrypt(privMrsh)
+		if err != nil {
+			return "", err
+		}
+		// Reassign data from raw to encrypted and base64 encoded string
+		data.Data = base64.StdEncoding.EncodeToString(privateDataEnc)
 	}
 
 	if err = api.fast.AddPayload(&state.Payload{
-		ID:                id,
-		SenderAccountID:   senderAccountID,
-		ReceiverAccountID: receiverAccountID,
-		PublicData:        string(publicData),
-		PrivateData:       base64.StdEncoding.EncodeToString(privateDataEnc),
-		CreatedAt:         float64(createdAt),
+		ID:              id,
+		SenderAccountID: senderAccountID,
+		PublicData:      string(publicData),
+		PrivateData:     privData,
+		CreatedAt:       float64(createdAt),
 	}); err != nil {
 		return "", err
 	}

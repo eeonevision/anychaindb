@@ -32,28 +32,23 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// PrivateData keeps information about receiver and data,
+// encrypted by receiver's public key
+type PrivateData struct {
+	ReceiverAccountID string      `msg:"receiver_account_id" json:"receiver_account_id" mapstructure:"receiver_account_id" bson:"receiver_account_id"`
+	Data              interface{} `msg:"data" json:"data" mapstructure:"data" bson:"data"`
+}
+
 // Payload struct keeps transaction data related fields.
 //   - PublicData keeps open data;
 //   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
 //   - CreatedAt is date of object creation in UNIX time (nanoseconds).
 type Payload struct {
-	ID                string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	SenderAccountID   string  `msg:"sender_account_id" json:"sender_account_id" mapstructure:"sender_account_id" bson:"sender_account_id"`
-	ReceiverAccountID string  `msg:"receiver_account_id" json:"receiver_account_id" mapstructure:"receiver_account_id" bson:"receiver_account_id"`
-	PublicData        string  `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
-	PrivateData       string  `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	CreatedAt         float64 `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
-}
-
-// Metadata struct keep information about requester remote address.
-type Metadata struct {
-	RemoteAddr string `msg:"remote_addr" json:"remote_addr" mapstructure:"remote_addr" bson:"remote_addr"`
-}
-
-// PrivateDataWrapper structs wraps private data from requester with metadata.
-type PrivateDataWrapper struct {
-	PrivateData interface{} `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	*Metadata   `msg:"metadata" json:"metadata" mapstructure:"metadata" bson:"metadata"`
+	ID              string         `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
+	SenderAccountID string         `msg:"sender_account_id" json:"sender_account_id" mapstructure:"sender_account_id" bson:"sender_account_id"`
+	PublicData      interface{}    `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
+	PrivateData     []*PrivateData `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
+	CreatedAt       float64        `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
 }
 
 // PostPayloadsHandler uses FastAPI for sends new transaction data requests in async mode to blockchain.
@@ -83,14 +78,7 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	privMrsh, err := json.Marshal(
-		PrivateDataWrapper{
-			PrivateData: data.PrivateData,
-			Metadata: &Metadata{
-				RemoteAddr: r.RemoteAddr,
-			},
-		},
-	)
+	privMrsh, err := json.Marshal(data.PrivateData)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
@@ -101,7 +89,7 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	id, err := api.AddPayload(req.AccountID, data.ReceiverAccountID, pubMrsh, privMrsh)
+	id, err := api.AddPayload(req.AccountID, pubMrsh, privMrsh)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return

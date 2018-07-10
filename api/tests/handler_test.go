@@ -188,9 +188,13 @@ func TestCreatePayload(t *testing.T) {
 		PrivKey:   acc1.Priv,
 		PubKey:    acc1.Pub,
 		Data: handler.Payload{
-			ReceiverAccountID: acc1.ID,
-			PublicData:        "test_public_data",
-			PrivateData:       "test_data",
+			PublicData: "test_public_data",
+			PrivateData: []*handler.PrivateData{
+				&handler.PrivateData{
+					ReceiverAccountID: acc1.ID,
+					Data:              "test_private_data",
+				},
+			},
 		}})
 	contents, err := doPOSTRequest(endpoint, url, data)
 	if err != nil {
