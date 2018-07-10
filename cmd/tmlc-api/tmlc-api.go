@@ -26,8 +26,8 @@ import (
 	"os"
 
 	lapi "github.com/eeonevision/anychaindb/api"
-	tmflags "github.com/tendermint/tmlibs/cli/flags"
-	"github.com/tendermint/tmlibs/log"
+	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 func main() {

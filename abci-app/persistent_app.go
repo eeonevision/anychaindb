@@ -22,12 +22,12 @@
 package app
 
 import (
-	"github.com/tendermint/tmlibs/log"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/eeonevision/anychaindb/state"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 type PersistentApplication struct {

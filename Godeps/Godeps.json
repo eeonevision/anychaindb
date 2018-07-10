@@ -294,16 +294,6 @@
 			"Rev": "714f901b98fdb3aa954b4193d8cbd64a28d80cad"
 		},
 		{
-			"ImportPath": "github.com/tendermint/abci/server",
-			"Comment": "v0.12.0-2-g7857efa",
-			"Rev": "7857efac3cf65bfc528b4fac0bc42fe9e6564dd7"
-		},
-		{
-			"ImportPath": "github.com/tendermint/abci/types",
-			"Comment": "v0.12.0-2-g7857efa",
-			"Rev": "7857efac3cf65bfc528b4fac0bc42fe9e6564dd7"
-		},
-		{
 			"ImportPath": "github.com/tendermint/ed25519",
 			"Rev": "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
 		},
@@ -332,6 +322,11 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/abci/example/kvstore",
+			"Comment": "v0.22.0-autodraft",
+			"Rev": "fa05b0395678ee448bd719bdf307c6d28669b4e9"
+		},
+		{
+			"ImportPath": "github.com/tendermint/tendermint/abci/server",
 			"Comment": "v0.22.0-autodraft",
 			"Rev": "fa05b0395678ee448bd719bdf307c6d28669b4e9"
 		},
@@ -382,6 +377,11 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/libs/autofile",
+			"Comment": "v0.22.0-autodraft",
+			"Rev": "fa05b0395678ee448bd719bdf307c6d28669b4e9"
+		},
+		{
+			"ImportPath": "github.com/tendermint/tendermint/libs/cli/flags",
 			"Comment": "v0.22.0-autodraft",
 			"Rev": "fa05b0395678ee448bd719bdf307c6d28669b4e9"
 		},
@@ -534,21 +534,6 @@
 			"ImportPath": "github.com/tendermint/tendermint/version",
 			"Comment": "v0.22.0-autodraft",
 			"Rev": "fa05b0395678ee448bd719bdf307c6d28669b4e9"
-		},
-		{
-			"ImportPath": "github.com/tendermint/tmlibs/cli/flags",
-			"Comment": "v0.9.0-1-ge09e3a5",
-			"Rev": "e09e3a56f323c3efa3653e513540f1686a5374b2"
-		},
-		{
-			"ImportPath": "github.com/tendermint/tmlibs/common",
-			"Comment": "v0.9.0-1-ge09e3a5",
-			"Rev": "e09e3a56f323c3efa3653e513540f1686a5374b2"
-		},
-		{
-			"ImportPath": "github.com/tendermint/tmlibs/log",
-			"Comment": "v0.9.0-1-ge09e3a5",
-			"Rev": "e09e3a56f323c3efa3653e513540f1686a5374b2"
 		},
 		{
 			"ImportPath": "github.com/tinylib/msgp/msgp",
