@@ -35,8 +35,8 @@ import (
 // PrivateData keeps information about receiver and data,
 // encrypted by receiver's public key
 type PrivateData struct {
-	ReceiverAccountID string      `msg:"receiver_account_id" json:"receiver_account_id" mapstructure:"receiver_account_id" bson:"receiver_account_id"`
-	Data              interface{} `msg:"data" json:"data" mapstructure:"data" bson:"data"`
+	ReceiverAccountID string      `json:"receiver_account_id" mapstructure:"receiver_account_id"`
+	Data              interface{} `json:"data" mapstructure:"data"`
 }
 
 // Payload struct keeps transaction data related fields.
@@ -44,11 +44,11 @@ type PrivateData struct {
 //   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
 //   - CreatedAt is date of object creation in UNIX time (nanoseconds).
 type Payload struct {
-	ID              string         `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	SenderAccountID string         `msg:"sender_account_id" json:"sender_account_id" mapstructure:"sender_account_id" bson:"sender_account_id"`
-	PublicData      interface{}    `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
-	PrivateData     []*PrivateData `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	CreatedAt       float64        `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
+	ID              string         `json:"_id,omitempty" mapstructure:"_id"`
+	SenderAccountID string         `json:"sender_account_id,omitempty" mapstructure:"sender_account_id"`
+	PublicData      interface{}    `json:"public_data,omitempty" mapstructure:"public_data"`
+	PrivateData     []*PrivateData `json:"private_data,omitempty" mapstructure:"private_data"`
+	CreatedAt       float64        `json:"created_at,omitempty" mapstructure:"created_at"`
 }
 
 // PostPayloadsHandler uses FastAPI for sends new transaction data requests in async mode to blockchain.

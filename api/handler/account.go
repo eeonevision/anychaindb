@@ -36,9 +36,9 @@ import (
 // Priv - private key of account
 // Pub - public key of account
 type Account struct {
-	ID   string `json:"id" mapstructure:"id"`
-	Priv string `json:"private_key" mapstructure:"private_key"`
-	Pub  string `json:"public_key" mapstructure:"public_key"`
+	ID   string `json:"id"`
+	Priv string `json:"private_key"`
+	Pub  string `json:"public_key"`
 }
 
 // PostAccountsHandler uses FastAPI for sends new accounts requests in async mode to blockchain
