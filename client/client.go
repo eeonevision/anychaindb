@@ -47,7 +47,7 @@ type AccountAPI interface {
 
 // PayloadAPI interface provides all transaction data related methods
 type PayloadAPI interface {
-	AddPayload(senderAccountID string, publicData, privateData []byte) (ID string, err error)
+	AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error)
 	GetPayload(ID string) (*state.Payload, error)
 	ListPayloads() ([]state.Payload, error)
 	SearchPayloads(query []byte) ([]state.Payload, error)
@@ -91,7 +91,7 @@ func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
 	return api.base.SearchAccounts(query)
 }
 
-func (api *apiClient) AddPayload(senderAccountID string, publicData, privateData []byte) (ID string, err error) {
+func (api *apiClient) AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
 	now := time.Now()
 	createdAt := now.UTC().UnixNano()
@@ -130,7 +130,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData, privateData
 	if err = api.fast.AddPayload(&state.Payload{
 		ID:              id,
 		SenderAccountID: senderAccountID,
-		PublicData:      string(publicData),
+		PublicData:      publicData,
 		PrivateData:     privData,
 		CreatedAt:       float64(createdAt),
 	}); err != nil {

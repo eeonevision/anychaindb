@@ -40,7 +40,7 @@ type PrivateData struct {
 }
 
 // Payload struct keeps transaction data related fields.
-//   - PublicData keeps open data;
+//   - PublicData keeps open data of any structure;
 //   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
 //   - CreatedAt is date of object creation in UNIX time (nanoseconds).
 type Payload struct {
@@ -83,13 +83,8 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	pubMrsh, err := json.Marshal(data.PublicData)
-	if err != nil {
-		writeResult(http.StatusBadRequest, err.Error(), nil, w)
-		return
-	}
 
-	id, err := api.AddPayload(req.AccountID, pubMrsh, privMrsh)
+	id, err := api.AddPayload(req.AccountID, data.PublicData, privMrsh)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
