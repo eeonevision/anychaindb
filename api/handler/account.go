@@ -36,7 +36,7 @@ import (
 // Priv - private key of account
 // Pub - public key of account
 type Account struct {
-	ID   string `json:"id"`
+	ID   string `json:"_id"`
 	Priv string `json:"private_key"`
 	Pub  string `json:"public_key"`
 }
