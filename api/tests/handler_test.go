@@ -172,9 +172,9 @@ func TestGetAccount(t *testing.T) {
 	t.Logf("Got account: %v", acc2)
 }
 
-type testPrivateData struct {
-	OfferID  string `json:"offer_id"`
-	StreamID string `json:"stream_id"`
+type conversion struct {
+	OfferID  int `json:"offer_id"`
+	StreamID int `json:"stream_id"`
 }
 
 func TestCreatePayload(t *testing.T) {
@@ -208,7 +208,7 @@ func TestCreatePayload(t *testing.T) {
 			PrivateData: []*handler.PrivateData{
 				&handler.PrivateData{
 					ReceiverAccountID: acc1.ID,
-					Data:              testPrivateData{OfferID: "offer_1", StreamID: "stream_1"},
+					Data:              conversion{OfferID: 15, StreamID: 1},
 				},
 			},
 		}})
@@ -346,6 +346,7 @@ func TestGetDecryptedPayload(t *testing.T) {
 		return
 	}
 	// Compare payloads
+	t.Log(string(contents))
 	cnv2 := resp.Data.(map[string]interface{})
 	if cnv2["_id"] != cnv1.ID {
 		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
