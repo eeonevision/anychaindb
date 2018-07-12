@@ -277,3 +277,64 @@ func TestGetPayload(t *testing.T) {
 	}
 	t.Logf("Got payload: %v", cnv2)
 }
+
+func TestGetDecryptedPayload(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/payloads")
+	url := *host + ":" + *apiPort
+	// Read payload.golden file
+	plFile, err := ioutil.ReadFile("artifacts/payload.golden")
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Parse payload.golden file
+	cnv1 := handler.Payload{}
+	err = json.Unmarshal(plFile, &cnv1)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	if len(cnv1.ID) == 0 {
+		t.Errorf("payload.golden is empty: %v", cnv1)
+		return
+	}
+	// Read account.golden file
+	accFile, err := ioutil.ReadFile("artifacts/account.golden")
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Parse account.golden file
+	acc1 := handler.Account{}
+	err = json.Unmarshal(accFile, &acc1)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	if len(acc1.ID) == 0 {
+		t.Errorf("account.golden is empty: %s", acc1)
+		return
+	}
+	endpoint = endpoint + "/" + cnv1.ID + "?receiver_id=" + acc1.ID + "&private_key=" + acc1.Priv
+	// Find payload in Anychaindb server
+	contents, err := doGETRequest(endpoint, url)
+	if err != nil {
+		t.Errorf("Error in sending GET request: %s", contents)
+		return
+	}
+	resp := handler.Result{}
+	err = json.Unmarshal(contents, &resp)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Compare payloads
+	cnv2 := resp.Data.(map[string]interface{})
+	if cnv2["_id"] != cnv1.ID {
+		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
+		return
+	}
+	// TODO: Compare payload data
+	t.Logf("Got payload: %v", cnv2)
+}

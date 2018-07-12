@@ -48,9 +48,9 @@ type AccountAPI interface {
 // PayloadAPI interface provides all transaction data related methods
 type PayloadAPI interface {
 	AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error)
-	GetPayload(ID string) (*state.Payload, error)
+	GetPayload(ID, receiverID, privKey string) (*state.Payload, error)
 	ListPayloads() ([]state.Payload, error)
-	SearchPayloads(query []byte) ([]state.Payload, error)
+	SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error)
 }
 
 // NewAPI constructs a new API instances based on an http transport
@@ -139,14 +139,66 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 	return id, nil
 }
 
-func (api *apiClient) GetPayload(id string) (*state.Payload, error) {
-	return api.base.GetPayload(id)
+func (api *apiClient) GetPayload(id, receiverID, privKey string) (*state.Payload, error) {
+	payload, err := api.base.GetPayload(id)
+	if err != nil {
+		return payload, err
+	}
+	// Check if decoding not needed
+	if receiverID == "" && privKey == "" {
+		return payload, nil
+	}
+	// Check if payload result is empty
+	if payload == nil {
+		return payload, nil
+	}
+	res, err := api.decryptPrivateData(receiverID, privKey, []state.Payload{*payload})
+	return &res[0], err
 }
 
 func (api *apiClient) ListPayloads() ([]state.Payload, error) {
 	return api.base.ListPayloads()
 }
 
-func (api *apiClient) SearchPayloads(query []byte) ([]state.Payload, error) {
-	return api.base.SearchPayloads(query)
+func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error) {
+	payloads, err := api.base.SearchPayloads(query)
+	if err != nil {
+		return payloads, err
+	}
+	// Check if decoding not needed
+	if receiverID == "" && privKey == "" {
+		return payloads, nil
+	}
+	// Check if payload result is empty
+	if len(payloads) == 0 {
+		return payloads, nil
+	}
+	// decrypt private data
+	return api.decryptPrivateData(receiverID, privKey, payloads)
+}
+
+func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []state.Payload) ([]state.Payload, error) {
+	// Get account's public key
+	acc, err := api.GetAccount(receiverID)
+	if err != nil {
+		return payloads, err
+	}
+	// Set private key structure for account
+	pK, err := crypto.NewFromStrings(acc.PubKey, privKey)
+	if err != nil {
+		return payloads, err
+	}
+	// Decrypt all data signed by public key of receiver
+	for _, p := range payloads {
+		for _, pD := range p.PrivateData {
+			if pD.ReceiverAccountID == receiverID {
+				decrypted, err := pK.Decrypt([]byte(pD.Data.(string)))
+				if err != nil {
+					return payloads, err
+				}
+				pD.Data = interface{}(decrypted)
+			}
+		}
+	}
+	return payloads, nil
 }

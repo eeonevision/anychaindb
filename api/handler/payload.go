@@ -107,6 +107,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	var offset int
 	var err error
 
+	// Get GET query params
 	if q := r.URL.Query().Get("query"); q != "" {
 		err := json.Unmarshal([]byte(q), &query)
 		if err != nil {
@@ -131,6 +132,11 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 			return
 		}
 	}
+	// Get optional params to decrypt private data
+	re := r.URL.Query().Get("receiver_id")
+	pk := r.URL.Query().Get("private_key")
+
+	// Check limits
 	if limit > 500 || limit <= 0 {
 		limit = 500
 	}
@@ -144,7 +150,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		Offset: offset,
 	}
 	searchReqStr, _ := json.Marshal(searchReq)
-	cnv, err := api.SearchPayloads(searchReqStr)
+	cnv, err := api.SearchPayloads(searchReqStr, re, pk)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
@@ -169,8 +175,12 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 			"ID should not be empty", nil, w)
 		return
 	}
+	// Get optional params to decrypt private data
+	re := r.URL.Query().Get("receiver_id")
+	pk := r.URL.Query().Get("private_key")
+
 	api := client.NewAPI(endpoint, nil, "")
-	cnv, err := api.GetPayload(id)
+	cnv, err := api.GetPayload(id, re, pk)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
