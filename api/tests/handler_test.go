@@ -203,7 +203,10 @@ func TestCreatePayload(t *testing.T) {
 			PrivateData: []*handler.PrivateData{
 				&handler.PrivateData{
 					ReceiverAccountID: acc1.ID,
-					Data:              "test_private_data",
+					Data: struct {
+						offerID  string
+						streamID string
+					}{"test_offer", "test_stream"},
 				},
 			},
 		}})
