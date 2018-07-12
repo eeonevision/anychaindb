@@ -165,8 +165,8 @@ func TestGetAccount(t *testing.T) {
 	}
 	// Compare accounts
 	acc2 := resp.Data.(map[string]interface{})
-	if acc2["_id"] != acc1.ID {
-		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1.ID, acc2["_id"])
+	if acc2["_id"] != acc1.ID || acc2["public_key"] != acc1.Pub {
+		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1, acc2)
 		return
 	}
 	t.Logf("Got account: %v", acc2)

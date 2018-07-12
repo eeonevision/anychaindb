@@ -132,9 +132,8 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 			return
 		}
 	}
-	// Get optional params to decrypt private data
-	re := r.URL.Query().Get("receiver_id")
-	pk := r.URL.Query().Get("private_key")
+	// Get basic auth data: receiver's account id and private key
+	re, pk, _ := r.BasicAuth()
 
 	// Check limits
 	if limit > 500 || limit <= 0 {
