@@ -192,11 +192,8 @@ func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []
 	for _, p := range payloads {
 		for _, pD := range p.PrivateData {
 			if pD.ReceiverAccountID == receiverID {
-				dataMrsh, err := json.Marshal(pD.Data)
-				if err != nil {
-					return payloads, err
-				}
-				decrypted, err := pK.Decrypt(dataMrsh)
+				decoded, _ := base64.StdEncoding.DecodeString(pD.Data.(string))
+				decrypted, err := pK.Decrypt(decoded)
 				if err != nil {
 					return payloads, err
 				}
