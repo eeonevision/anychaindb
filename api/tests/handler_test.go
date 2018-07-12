@@ -172,6 +172,11 @@ func TestGetAccount(t *testing.T) {
 	t.Logf("Got account: %v", acc2)
 }
 
+type testPrivateData struct {
+	OfferID  string `json:"offer_id"`
+	StreamID string `json:"stream_id"`
+}
+
 func TestCreatePayload(t *testing.T) {
 	// Generate transaction request
 	endpoint := fmt.Sprintf("/v1/payloads")
@@ -203,10 +208,7 @@ func TestCreatePayload(t *testing.T) {
 			PrivateData: []*handler.PrivateData{
 				&handler.PrivateData{
 					ReceiverAccountID: acc1.ID,
-					Data: struct {
-						offerID  string
-						streamID string
-					}{"test_offer", "test_stream"},
+					Data:              testPrivateData{"offer_1", "stream_1"},
 				},
 			},
 		}})
