@@ -197,7 +197,7 @@ func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []
 				if err != nil {
 					return payloads, err
 				}
-				var decrypted map[string]interface{}
+				var decrypted interface{}
 				err = json.Unmarshal(decryptedBin, &decrypted)
 				if err != nil {
 					return payloads, err

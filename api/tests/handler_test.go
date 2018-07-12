@@ -208,7 +208,7 @@ func TestCreatePayload(t *testing.T) {
 			PrivateData: []*handler.PrivateData{
 				&handler.PrivateData{
 					ReceiverAccountID: acc1.ID,
-					Data:              testPrivateData{"offer_1", "stream_1"},
+					Data:              testPrivateData{OfferID: "offer_1", StreamID: "stream_1"},
 				},
 			},
 		}})
