@@ -175,9 +175,8 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 			"ID should not be empty", nil, w)
 		return
 	}
-	// Get optional params to decrypt private data
-	re := r.URL.Query().Get("receiver_id")
-	pk := r.URL.Query().Get("private_key")
+	// Get basic auth data: receiver's account id and private key
+	re, pk, _ := r.BasicAuth()
 
 	api := client.NewAPI(endpoint, nil, "")
 	cnv, err := api.GetPayload(id, re, pk)

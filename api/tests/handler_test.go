@@ -39,9 +39,15 @@ var apiPort = flag.String("apiport", "26659", "api port")
 var rpcPort = flag.String("rpcport", "26657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
 
-func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
+func doPOSTRequest(endpoint, url, id, privKey string, data []byte) ([]byte, error) {
+	client := &http.Client{Timeout: time.Second * 30}
+	req, _ := http.NewRequest("POST", "http://"+url+endpoint, bytes.NewBuffer(data))
+	req.Header.Set("Content-Type", "application/json")
+	if id != "" && privKey != "" {
+		req.SetBasicAuth(id, privKey)
+	}
 	// Send request to Anychaindb
-	respRaw, err := http.Post("http://"+url+endpoint, "application/json", bytes.NewBuffer(data))
+	respRaw, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +63,13 @@ func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
 	return contents, nil
 }
 
-func doGETRequest(endpoint, url string) ([]byte, error) {
-	respRaw, err := http.Get("http://" + url + endpoint)
+func doGETRequest(endpoint, url, id, privKey string) ([]byte, error) {
+	client := &http.Client{Timeout: time.Second * 30}
+	req, _ := http.NewRequest("GET", "http://"+url+endpoint, nil)
+	if id != "" && privKey != "" {
+		req.SetBasicAuth(id, privKey)
+	}
+	respRaw, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +90,7 @@ func TestCreateAccount(t *testing.T) {
 	endpoint := fmt.Sprintf("/v1/accounts")
 	url := *host + ":" + *apiPort
 	data, _ := json.Marshal(handler.Request{})
-	contents, err := doPOSTRequest(endpoint, url, data)
+	contents, err := doPOSTRequest(endpoint, url, "", "", data)
 	if err != nil {
 		t.Errorf("error in sending POST request: %s", contents)
 		return
@@ -141,7 +152,7 @@ func TestGetAccount(t *testing.T) {
 	}
 	endpoint = endpoint + "/" + acc1.ID
 	// Find account in Anychaindb server
-	contents, err := doGETRequest(endpoint, url)
+	contents, err := doGETRequest(endpoint, url, "", "")
 	if err != nil {
 		t.Errorf("error in sending GET request: %s", contents)
 		return
@@ -196,7 +207,7 @@ func TestCreatePayload(t *testing.T) {
 				},
 			},
 		}})
-	contents, err := doPOSTRequest(endpoint, url, data)
+	contents, err := doPOSTRequest(endpoint, url, "", "", data)
 	if err != nil {
 		t.Errorf("Error in sending POST request: %s", contents)
 		return
@@ -258,7 +269,7 @@ func TestGetPayload(t *testing.T) {
 	}
 	endpoint = endpoint + "/" + cnv1.ID
 	// Find payload in Anychaindb server
-	contents, err := doGETRequest(endpoint, url)
+	contents, err := doGETRequest(endpoint, url, "", "")
 	if err != nil {
 		t.Errorf("Error in sending GET request: %s", contents)
 		return
@@ -316,9 +327,9 @@ func TestGetDecryptedPayload(t *testing.T) {
 		t.Errorf("account.golden is empty: %s", acc1)
 		return
 	}
-	endpoint = endpoint + "/" + cnv1.ID + "?receiver_id=" + acc1.ID + "&private_key=" + acc1.Priv
+	endpoint = endpoint + "/" + cnv1.ID
 	// Find payload in Anychaindb server
-	contents, err := doGETRequest(endpoint, url)
+	contents, err := doGETRequest(endpoint, url, acc1.ID, acc1.Priv)
 	if err != nil {
 		t.Errorf("Error in sending GET request: %s", contents)
 		return
