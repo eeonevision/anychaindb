@@ -202,7 +202,7 @@ func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []
 				if err != nil {
 					return payloads, err
 				}
-				p.Data = decrypted
+				p.Data = string(decryptedBin)
 			}
 		}
 	}
