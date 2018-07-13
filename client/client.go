@@ -93,8 +93,6 @@ func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
 
 func (api *apiClient) AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error) {
 	id := bson.NewObjectId().Hex()
-	now := time.Now()
-	createdAt := now.UTC().UnixNano()
 
 	// Unmarshal private data
 	var privData []*state.PrivateData
@@ -132,7 +130,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 		SenderAccountID: senderAccountID,
 		PublicData:      publicData,
 		PrivateData:     privData,
-		CreatedAt:       float64(createdAt),
+		CreatedAt:       float64(time.Now().UnixNano() / 1000000),
 	}); err != nil {
 		return "", err
 	}

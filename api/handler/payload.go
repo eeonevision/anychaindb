@@ -42,7 +42,7 @@ type PrivateData struct {
 // Payload struct keeps transaction data related fields.
 //   - PublicData keeps open data of any structure;
 //   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
-//   - CreatedAt is date of object creation in UNIX time (nanoseconds).
+//   - CreatedAt is date of object creation in UNIX time (milliseconds).
 type Payload struct {
 	ID              string         `json:"_id,omitempty" mapstructure:"_id"`
 	SenderAccountID string         `json:"sender_account_id,omitempty" mapstructure:"sender_account_id"`
