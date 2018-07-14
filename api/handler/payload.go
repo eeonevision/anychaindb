@@ -32,28 +32,23 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// PrivateData keeps information about receiver and data,
+// encrypted by receiver's public key
+type PrivateData struct {
+	ReceiverAccountID string      `json:"receiver_account_id" mapstructure:"receiver_account_id"`
+	Data              interface{} `json:"data" mapstructure:"data"`
+}
+
 // Payload struct keeps transaction data related fields.
-//   - PublicData keeps open data;
+//   - PublicData keeps open data of any structure;
 //   - PrivateData keeps encrypted by affiliate's public key with ECDH algorithm data and represented as base64 string;
-//   - CreatedAt is date of object creation in UNIX time (nanoseconds).
+//   - CreatedAt is date of object creation in UNIX time (milliseconds).
 type Payload struct {
-	ID                string  `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	SenderAccountID   string  `msg:"sender_account_id" json:"sender_account_id" mapstructure:"sender_account_id" bson:"sender_account_id"`
-	ReceiverAccountID string  `msg:"receiver_account_id" json:"receiver_account_id" mapstructure:"receiver_account_id" bson:"receiver_account_id"`
-	PublicData        string  `msg:"public_data" json:"public_data" mapstructure:"public_data" bson:"public_data"`
-	PrivateData       string  `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	CreatedAt         float64 `msg:"created_at" json:"created_at" mapstructure:"created_at" bson:"created_at"`
-}
-
-// Metadata struct keep information about requester remote address.
-type Metadata struct {
-	RemoteAddr string `msg:"remote_addr" json:"remote_addr" mapstructure:"remote_addr" bson:"remote_addr"`
-}
-
-// PrivateDataWrapper structs wraps private data from requester with metadata.
-type PrivateDataWrapper struct {
-	PrivateData interface{} `msg:"private_data" json:"private_data" mapstructure:"private_data" bson:"private_data"`
-	*Metadata   `msg:"metadata" json:"metadata" mapstructure:"metadata" bson:"metadata"`
+	ID              string         `json:"_id,omitempty" mapstructure:"_id"`
+	SenderAccountID string         `json:"sender_account_id,omitempty" mapstructure:"sender_account_id"`
+	PublicData      interface{}    `json:"public_data,omitempty" mapstructure:"public_data"`
+	PrivateData     []*PrivateData `json:"private_data,omitempty" mapstructure:"private_data"`
+	CreatedAt       float64        `json:"created_at,omitempty" mapstructure:"created_at"`
 }
 
 // PostPayloadsHandler uses FastAPI for sends new transaction data requests in async mode to blockchain.
@@ -83,25 +78,13 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 	api := client.NewAPI(endpoint, key, req.AccountID)
-	privMrsh, err := json.Marshal(
-		PrivateDataWrapper{
-			PrivateData: data.PrivateData,
-			Metadata: &Metadata{
-				RemoteAddr: r.RemoteAddr,
-			},
-		},
-	)
-	if err != nil {
-		writeResult(http.StatusBadRequest, err.Error(), nil, w)
-		return
-	}
-	pubMrsh, err := json.Marshal(data.PublicData)
+	privMrsh, err := json.Marshal(data.PrivateData)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
 
-	id, err := api.AddPayload(req.AccountID, data.ReceiverAccountID, pubMrsh, privMrsh)
+	id, err := api.AddPayload(req.AccountID, data.PublicData, privMrsh)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
@@ -124,6 +107,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	var offset int
 	var err error
 
+	// Get GET query params
 	if q := r.URL.Query().Get("query"); q != "" {
 		err := json.Unmarshal([]byte(q), &query)
 		if err != nil {
@@ -148,6 +132,10 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 			return
 		}
 	}
+	// Get basic auth data: receiver's account id and private key
+	re, pk, _ := r.BasicAuth()
+
+	// Check limits
 	if limit > 500 || limit <= 0 {
 		limit = 500
 	}
@@ -161,7 +149,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		Offset: offset,
 	}
 	searchReqStr, _ := json.Marshal(searchReq)
-	cnv, err := api.SearchPayloads(searchReqStr)
+	cnv, err := api.SearchPayloads(searchReqStr, re, pk)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
@@ -186,8 +174,11 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 			"ID should not be empty", nil, w)
 		return
 	}
+	// Get basic auth data: receiver's account id and private key
+	re, pk, _ := r.BasicAuth()
+
 	api := client.NewAPI(endpoint, nil, "")
-	cnv, err := api.GetPayload(id)
+	cnv, err := api.GetPayload(id, re, pk)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return

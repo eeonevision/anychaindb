@@ -39,9 +39,15 @@ var apiPort = flag.String("apiport", "26659", "api port")
 var rpcPort = flag.String("rpcport", "26657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
 
-func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
+func doPOSTRequest(endpoint, url, id, privKey string, data []byte) ([]byte, error) {
+	client := &http.Client{Timeout: time.Second * 30}
+	req, _ := http.NewRequest("POST", "http://"+url+endpoint, bytes.NewBuffer(data))
+	req.Header.Set("Content-Type", "application/json")
+	if id != "" && privKey != "" {
+		req.SetBasicAuth(id, privKey)
+	}
 	// Send request to Anychaindb
-	respRaw, err := http.Post("http://"+url+endpoint, "application/json", bytes.NewBuffer(data))
+	respRaw, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +63,13 @@ func doPOSTRequest(endpoint, url string, data []byte) ([]byte, error) {
 	return contents, nil
 }
 
-func doGETRequest(endpoint, url string) ([]byte, error) {
-	respRaw, err := http.Get("http://" + url + endpoint)
+func doGETRequest(endpoint, url, id, privKey string) ([]byte, error) {
+	client := &http.Client{Timeout: time.Second * 30}
+	req, _ := http.NewRequest("GET", "http://"+url+endpoint, nil)
+	if id != "" && privKey != "" {
+		req.SetBasicAuth(id, privKey)
+	}
+	respRaw, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +90,7 @@ func TestCreateAccount(t *testing.T) {
 	endpoint := fmt.Sprintf("/v1/accounts")
 	url := *host + ":" + *apiPort
 	data, _ := json.Marshal(handler.Request{})
-	contents, err := doPOSTRequest(endpoint, url, data)
+	contents, err := doPOSTRequest(endpoint, url, "", "", data)
 	if err != nil {
 		t.Errorf("error in sending POST request: %s", contents)
 		return
@@ -141,7 +152,7 @@ func TestGetAccount(t *testing.T) {
 	}
 	endpoint = endpoint + "/" + acc1.ID
 	// Find account in Anychaindb server
-	contents, err := doGETRequest(endpoint, url)
+	contents, err := doGETRequest(endpoint, url, "", "")
 	if err != nil {
 		t.Errorf("error in sending GET request: %s", contents)
 		return
@@ -154,11 +165,16 @@ func TestGetAccount(t *testing.T) {
 	}
 	// Compare accounts
 	acc2 := resp.Data.(map[string]interface{})
-	if acc2["_id"] != acc1.ID {
-		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1.ID, acc2["_id"])
+	if acc2["_id"] != acc1.ID || acc2["public_key"] != acc1.Pub {
+		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1, acc2)
 		return
 	}
 	t.Logf("Got account: %v", acc2)
+}
+
+type conversion struct {
+	OfferID  int `json:"offer_id"`
+	StreamID int `json:"stream_id"`
 }
 
 func TestCreatePayload(t *testing.T) {
@@ -188,11 +204,15 @@ func TestCreatePayload(t *testing.T) {
 		PrivKey:   acc1.Priv,
 		PubKey:    acc1.Pub,
 		Data: handler.Payload{
-			ReceiverAccountID: acc1.ID,
-			PublicData:        "test_public_data",
-			PrivateData:       "test_data",
+			PublicData: "test_public_data",
+			PrivateData: []*handler.PrivateData{
+				&handler.PrivateData{
+					ReceiverAccountID: acc1.ID,
+					Data:              conversion{OfferID: 15, StreamID: 1},
+				},
+			},
 		}})
-	contents, err := doPOSTRequest(endpoint, url, data)
+	contents, err := doPOSTRequest(endpoint, url, "", "", data)
 	if err != nil {
 		t.Errorf("Error in sending POST request: %s", contents)
 		return
@@ -254,7 +274,7 @@ func TestGetPayload(t *testing.T) {
 	}
 	endpoint = endpoint + "/" + cnv1.ID
 	// Find payload in Anychaindb server
-	contents, err := doGETRequest(endpoint, url)
+	contents, err := doGETRequest(endpoint, url, "", "")
 	if err != nil {
 		t.Errorf("Error in sending GET request: %s", contents)
 		return
@@ -271,5 +291,67 @@ func TestGetPayload(t *testing.T) {
 		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
 		return
 	}
+	t.Logf("Got payload: %v", cnv2)
+}
+
+func TestGetDecryptedPayload(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/payloads")
+	url := *host + ":" + *apiPort
+	// Read payload.golden file
+	plFile, err := ioutil.ReadFile("artifacts/payload.golden")
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Parse payload.golden file
+	cnv1 := handler.Payload{}
+	err = json.Unmarshal(plFile, &cnv1)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	if len(cnv1.ID) == 0 {
+		t.Errorf("payload.golden is empty: %v", cnv1)
+		return
+	}
+	// Read account.golden file
+	accFile, err := ioutil.ReadFile("artifacts/account.golden")
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Parse account.golden file
+	acc1 := handler.Account{}
+	err = json.Unmarshal(accFile, &acc1)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	if len(acc1.ID) == 0 {
+		t.Errorf("account.golden is empty: %s", acc1)
+		return
+	}
+	endpoint = endpoint + "/" + cnv1.ID
+	// Find payload in Anychaindb server
+	contents, err := doGETRequest(endpoint, url, acc1.ID, acc1.Priv)
+	if err != nil {
+		t.Errorf("Error in sending GET request: %s", contents)
+		return
+	}
+	resp := handler.Result{}
+	err = json.Unmarshal(contents, &resp)
+	if err != nil {
+		t.Errorf("%s", err)
+		return
+	}
+	// Compare payloads
+	t.Log(string(contents))
+	cnv2 := resp.Data.(map[string]interface{})
+	if cnv2["_id"] != cnv1.ID {
+		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
+		return
+	}
+	// TODO: Compare payload data
 	t.Logf("Got payload: %v", cnv2)
 }

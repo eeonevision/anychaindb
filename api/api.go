@@ -28,7 +28,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/tendermint/tmlibs/log"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/julienschmidt/httprouter"
 

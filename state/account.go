@@ -32,7 +32,7 @@ import (
 // Account struct keeps account related fields.
 type Account struct {
 	ID     string `msg:"_id" json:"_id" mapstructure:"_id" bson:"_id"`
-	PubKey string `msg:"pubkey" json:"pubkey" mapstructure:"pubkey" bson:"pubkey"`
+	PubKey string `msg:"public_key" json:"public_key" mapstructure:"public_key" bson:"public_key"`
 }
 
 const accountsCollection = "accounts"

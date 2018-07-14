@@ -25,12 +25,12 @@ import (
 	"flag"
 	"os"
 
-	tmflags "github.com/tendermint/tmlibs/cli/flags"
-	"github.com/tendermint/tmlibs/log"
+	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
+	"github.com/tendermint/tendermint/libs/log"
 
 	labci "github.com/eeonevision/anychaindb/abci-app"
-	"github.com/tendermint/abci/server"
-	"github.com/tendermint/tmlibs/common"
+	"github.com/tendermint/tendermint/abci/server"
+	"github.com/tendermint/tendermint/libs/common"
 )
 
 func main() {
