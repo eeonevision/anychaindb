@@ -3,13 +3,13 @@ package version
 // Version related constants.
 const (
 	Major = "2"
-	Minor = "0"
+	Minor = "1"
 	Fix   = "1"
 )
 
 var (
 	// Version is the current version of AnychainDB platform.
-	Version = "2.0.1"
+	Version = "2.1.1"
 
 	// GitCommit is the current HEAD set using ldflags.
 	GitCommit string
