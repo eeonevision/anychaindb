@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	amino "github.com/tendermint/go-amino"
@@ -485,18 +486,22 @@ func (n *Node) OnStop() {
 	n.BaseService.OnStop()
 
 	n.Logger.Info("Stopping Node")
+
+	// first stop the non-reactor services
+	n.eventBus.Stop()
+	n.indexerService.Stop()
+
+	// now stop the reactors
 	// TODO: gracefully disconnect from peers.
 	n.sw.Stop()
 
+	// finally stop the listeners / external services
 	for _, l := range n.rpcListeners {
 		n.Logger.Info("Closing rpc listener", "listener", l)
 		if err := l.Close(); err != nil {
 			n.Logger.Error("Error closing listener", "listener", l, "err", err)
 		}
 	}
-
-	n.eventBus.Stop()
-	n.indexerService.Stop()
 
 	if pvsc, ok := n.privValidator.(*privval.SocketPV); ok {
 		if err := pvsc.Stop(); err != nil {
@@ -599,8 +604,13 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 // collectors on addr.
 func (n *Node) startPrometheusServer(addr string) *http.Server {
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: promhttp.Handler(),
+		Addr: addr,
+		Handler: promhttp.InstrumentMetricHandler(
+			prometheus.DefaultRegisterer, promhttp.HandlerFor(
+				prometheus.DefaultGatherer,
+				promhttp.HandlerOpts{MaxRequestsInFlight: n.config.Instrumentation.MaxOpenConnections},
+			),
+		),
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
