@@ -35,7 +35,7 @@ func CreateKeyPair() (*Key, error) {
 func NewFromStrings(pub, priv string) (*Key, error) {
 	k := &Key{}
 	if pub == "" && priv == "" {
-		return nil, errors.New("No key material supplied")
+		return nil, errors.New("no key material supplied")
 	}
 	if pub != "" {
 		if err := k.SetPubString(pub); err != nil {
@@ -43,7 +43,7 @@ func NewFromStrings(pub, priv string) (*Key, error) {
 		}
 	}
 	if priv != "" && pub == "" {
-		return nil, errors.New("No pubkey to privkey supplied")
+		return nil, errors.New("no pubkey to privkey supplied")
 	}
 	if priv != "" {
 		if err := k.SetPrivString(priv); err != nil {
@@ -98,7 +98,7 @@ func (k *Key) Sign(hash []byte) (string, error) {
 func (k *Key) Verify(hash []byte, signature string) error {
 	parts := strings.Split(signature, ":")
 	if len(parts) != 2 {
-		return errors.New("Malformed signature")
+		return errors.New("malformed signature")
 	}
 	rBytes, err := base64.StdEncoding.DecodeString(parts[0])
 	if err != nil {
@@ -111,7 +111,7 @@ func (k *Key) Verify(hash []byte, signature string) error {
 	r := (&big.Int{}).SetBytes(rBytes)
 	s := (&big.Int{}).SetBytes(sBytes)
 	if !ecdsa.Verify(k.pub, hash, r, s) {
-		return errors.New("Bad signature")
+		return errors.New("bad signature")
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func (k *Key) Encrypt(in []byte) (out []byte, err error) {
 	}
 	x, _ := k.pub.Curve.ScalarMult(k.pub.X, k.pub.Y, ephemeral.D.Bytes())
 	if x == nil {
-		return nil, errors.New("Failed to generate encryption key")
+		return nil, errors.New("failed to generate encryption key")
 	}
 	shared := sha256.Sum256(x.Bytes())
 	iv, err := symcrypt.MakeRandom(16)
@@ -161,17 +161,17 @@ func (k *Key) Decrypt(in []byte) (out []byte, err error) {
 	ephPub := in[1 : 1+ephLen]
 	ct := in[1+ephLen:]
 	if len(ct) < (sha1.Size + aes.BlockSize) {
-		return nil, errors.New("Invalid ciphertext")
+		return nil, errors.New("invalid ciphertext")
 	}
 
 	x, y := elliptic.Unmarshal(Curve(), ephPub)
 	if x == nil {
-		return nil, errors.New("Invalid public key")
+		return nil, errors.New("invalid public key")
 	}
 
 	x, _ = k.priv.Curve.ScalarMult(x, y, k.priv.D.Bytes())
 	if x == nil {
-		return nil, errors.New("Failed to generate encryption key")
+		return nil, errors.New("failed to generate encryption key")
 	}
 	shared := sha256.Sum256(x.Bytes())
 
@@ -180,7 +180,7 @@ func (k *Key) Decrypt(in []byte) (out []byte, err error) {
 	h.Write(ct[:tagStart])
 	mac := h.Sum(nil)
 	if !hmac.Equal(mac, ct[tagStart:]) {
-		return nil, errors.New("Invalid MAC")
+		return nil, errors.New("invalid MAC")
 	}
 
 	paddedOut, err := symcrypt.DecryptCBC(ct[aes.BlockSize:tagStart], ct[:aes.BlockSize], shared[:16])

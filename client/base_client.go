@@ -23,7 +23,7 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 
 	"github.com/eeonevision/anychaindb/crypto"
 	"github.com/eeonevision/anychaindb/state"
@@ -50,20 +50,20 @@ func (c *BaseClient) AddAccount(acc *state.Account) error {
 	}
 	tx := transaction.New(transaction.AccountAdd, c.AccountID, txBytes)
 	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxAsync(types.Tx(bs))
+	res, err := c.tm.BroadcastTxSync(types.Tx(bs))
 	if err != nil {
 		return err
 	}
 	if res.Code != 0 {
-		return fmt.Errorf("%v: %s", res.Code, res.Log)
+		return errors.New(res.Log)
 	}
 	return nil
 }
 
 func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
-	resp, err := c.tm.ABCIQuery("accounts", []byte(id))
-	if err != nil {
-		return nil, err
+	resp, _ := c.tm.ABCIQuery("accounts", []byte(id))
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	acc := &state.Account{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
@@ -72,22 +72,10 @@ func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
 	return acc, nil
 }
 
-func (c *BaseClient) ListAccounts() ([]state.Account, error) {
-	resp, err := c.tm.ABCIQuery("accounts", nil)
-	if err != nil {
-		return nil, err
-	}
-	acc := []state.Account{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
-		return nil, err
-	}
-	return acc, nil
-}
-
 func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error) {
-	resp, err := c.tm.ABCIQuery("accounts/search", searchQuery)
-	if err != nil {
-		return nil, err
+	resp, _ := c.tm.ABCIQuery("accounts/search", searchQuery)
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	acc := []state.Account{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
@@ -106,20 +94,20 @@ func (c *BaseClient) AddPayload(cv *state.Payload) error {
 		return err
 	}
 	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxAsync(types.Tx(bs))
+	res, err := c.tm.BroadcastTxSync(types.Tx(bs))
 	if err != nil {
 		return err
 	}
 	if res.Code != 0 {
-		return fmt.Errorf("%v: %s", res.Code, res.Log)
+		return errors.New(res.Log)
 	}
 	return nil
 }
 
 func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
-	resp, err := c.tm.ABCIQuery("payloads", []byte(id))
-	if err != nil {
-		return nil, err
+	resp, _ := c.tm.ABCIQuery("payloads", []byte(id))
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	res := &state.Payload{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
@@ -128,22 +116,10 @@ func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
 	return res, nil
 }
 
-func (c *BaseClient) ListPayloads() ([]state.Payload, error) {
-	resp, err := c.tm.ABCIQuery("payloads", nil)
-	if err != nil {
-		return nil, err
-	}
-	res := []state.Payload{}
-	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
-		return nil, err
-	}
-	return res, nil
-}
-
 func (c *BaseClient) SearchPayloads(searchQuery []byte) ([]state.Payload, error) {
-	resp, err := c.tm.ABCIQuery("payloads/search", searchQuery)
-	if err != nil {
-		return nil, err
+	resp, _ := c.tm.ABCIQuery("payloads/search", searchQuery)
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	res := []state.Payload{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {

@@ -40,7 +40,7 @@ const accountsCollection = "accounts"
 // AddAccount method adds new account if all checks were passed.
 func (s *State) AddAccount(account *Account) error {
 	if s.HasAccount(account.ID) {
-		return errors.New("Account exists")
+		return errors.New("account exists")
 	}
 	return s.SetAccount(account)
 }

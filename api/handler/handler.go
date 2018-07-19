@@ -23,10 +23,14 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
 var endpoint string
+
+// errNotFound error returned when a document could not be found
+var errNotFound = errors.New("not found")
 
 // Request struct represents request related fields.
 //

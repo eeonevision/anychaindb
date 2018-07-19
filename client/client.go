@@ -24,6 +24,7 @@ package client
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/eeonevision/anychaindb/crypto"
@@ -41,7 +42,6 @@ type API interface {
 type AccountAPI interface {
 	CreateAccount() (id, pub, priv string, err error)
 	GetAccount(id string) (*state.Account, error)
-	ListAccounts() ([]state.Account, error)
 	SearchAccounts(query []byte) ([]state.Account, error)
 }
 
@@ -49,7 +49,6 @@ type AccountAPI interface {
 type PayloadAPI interface {
 	AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error)
 	GetPayload(ID, receiverID, privKey string) (*state.Payload, error)
-	ListPayloads() ([]state.Payload, error)
 	SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error)
 }
 
@@ -73,7 +72,7 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 	}
 	api.base.Key = key
 	id = bson.NewObjectId().Hex()
-	if err := api.fast.AddAccount(&state.Account{ID: id, PubKey: key.GetPubString()}); err != nil {
+	if err := api.base.AddAccount(&state.Account{ID: id, PubKey: key.GetPubString()}); err != nil {
 		return "", "", "", err
 	}
 	return id, key.GetPubString(), key.GetPrivString(), nil
@@ -81,10 +80,6 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 
 func (api *apiClient) GetAccount(id string) (*state.Account, error) {
 	return api.base.GetAccount(id)
-}
-
-func (api *apiClient) ListAccounts() ([]state.Account, error) {
-	return api.base.ListAccounts()
 }
 
 func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
@@ -98,28 +93,30 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 	var privData []*state.PrivateData
 	err = json.Unmarshal(privateData, &privData)
 	if err != nil {
-		return "", err
+		return "", errors.New("error in unmarshalling private data: " + err.Error())
 	}
 
 	for _, data := range privData {
 		// Get receiver's public key
 		receiver, err := api.GetAccount(data.ReceiverAccountID)
 		if err != nil {
-			return "", err
+			return "", errors.New(
+				"error in getting receiver's account " + data.ReceiverAccountID + ": " + err.Error(),
+			)
 		}
 		receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
 		if err != nil {
-			return "", err
+			return "", errors.New("error in processing receiver's public key: " + err.Error())
 		}
 		// Marshal private data of receiver
 		privMrsh, err := json.Marshal(data.Data)
 		if err != nil {
-			return "", err
+			return "", errors.New("error in marshalling private data: " + err.Error())
 		}
 		// ECDH encrypted private data with public key of receiver
 		privateDataEnc, err := receiverPubKey.Encrypt(privMrsh)
 		if err != nil {
-			return "", err
+			return "", errors.New("error in encrypting private data: " + err.Error())
 		}
 		// Reassign data from raw to encrypted and base64 encoded string
 		data.Data = base64.StdEncoding.EncodeToString(privateDataEnc)
@@ -154,10 +151,6 @@ func (api *apiClient) GetPayload(id, receiverID, privKey string) (*state.Payload
 	return &res[0], err
 }
 
-func (api *apiClient) ListPayloads() ([]state.Payload, error) {
-	return api.base.ListPayloads()
-}
-
 func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error) {
 	payloads, err := api.base.SearchPayloads(query)
 	if err != nil {
@@ -179,12 +172,12 @@ func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []
 	// Get account's public key
 	acc, err := api.GetAccount(receiverID)
 	if err != nil {
-		return payloads, err
+		return payloads, errors.New("invalid authorization account id: " + err.Error())
 	}
 	// Set private key structure for account
 	pK, err := crypto.NewFromStrings(acc.PubKey, privKey)
 	if err != nil {
-		return payloads, err
+		return payloads, errors.New("invalid authorization private key: " + err.Error())
 	}
 	// Decrypt all data signed by public key of receiver
 	for _, payload := range payloads {
@@ -193,7 +186,9 @@ func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []
 				decodedBin, _ := base64.StdEncoding.DecodeString(p.Data.(string))
 				decryptedBin, err := pK.Decrypt(decodedBin)
 				if err != nil {
-					return payloads, err
+					return payloads, errors.New(
+						"cannot decrypt private data for receiver's account id " + p.ReceiverAccountID + ": " + err.Error(),
+					)
 				}
 				var decrypted interface{}
 				err = json.Unmarshal(decryptedBin, &decrypted)
