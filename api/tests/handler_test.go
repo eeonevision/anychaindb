@@ -23,11 +23,13 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -38,6 +40,8 @@ var host = flag.String("host", "localhost", "machine host")
 var apiPort = flag.String("apiport", "26659", "api port")
 var rpcPort = flag.String("rpcport", "26657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
+
+var notFoundCodeErr = errors.New("404")
 
 func doPOSTRequest(endpoint, url, id, privKey string, data []byte) ([]byte, error) {
 	client := &http.Client{Timeout: time.Second * 30}
@@ -58,7 +62,7 @@ func doPOSTRequest(endpoint, url, id, privKey string, data []byte) ([]byte, erro
 	}
 	// Check response status code
 	if respRaw.StatusCode != http.StatusAccepted {
-		return contents, fmt.Errorf("status code is not '202 Accepted': %v", respRaw.StatusCode)
+		return contents, errors.New(strconv.Itoa(respRaw.StatusCode))
 	}
 	return contents, nil
 }
@@ -80,7 +84,7 @@ func doGETRequest(endpoint, url, id, privKey string) ([]byte, error) {
 	}
 	// Check response status code
 	if respRaw.StatusCode != http.StatusOK {
-		return contents, fmt.Errorf("status code is not '200 OK': %v", respRaw.StatusCode)
+		return contents, errors.New(strconv.Itoa(respRaw.StatusCode))
 	}
 	return contents, nil
 }
@@ -169,7 +173,21 @@ func TestGetAccount(t *testing.T) {
 		t.Errorf("accounts are not equal. Expected: %v, Output: %v", acc1, acc2)
 		return
 	}
-	t.Logf("Got account: %v", acc2)
+	t.Logf("got account: %v", acc2)
+}
+
+func TestGetWrongAccount(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/accounts")
+	url := *host + ":" + *apiPort
+	endpoint = endpoint + "/34"
+	// Find account in Anychaindb server
+	_, err := doGETRequest(endpoint, url, "", "")
+	if err != notFoundCodeErr {
+		t.Errorf("error in getting wrong account: %s", err)
+		return
+	}
+	t.Logf("wrong account successfully detected. Returned status code: %s", err)
 }
 
 type conversion struct {
@@ -214,7 +232,7 @@ func TestCreatePayload(t *testing.T) {
 		}})
 	contents, err := doPOSTRequest(endpoint, url, "", "", data)
 	if err != nil {
-		t.Errorf("Error in sending POST request: %s", contents)
+		t.Errorf("error in sending POST request: %s", contents)
 		return
 	}
 	// Check data in results
@@ -226,7 +244,7 @@ func TestCreatePayload(t *testing.T) {
 	}
 	cnv := resp.Data.(map[string]interface{})
 	if cnv["_id"] == "" {
-		t.Errorf("Payload has no id: %s", cnv)
+		t.Errorf("payload has no id: %s", cnv)
 		return
 	}
 	// Write payload to payload.golden file
@@ -248,7 +266,7 @@ func TestCreatePayload(t *testing.T) {
 		// Wait for transaction approve
 		time.Sleep(time.Second * 5)
 	}
-	t.Logf("Added payload: %v", string(data))
+	t.Logf("added payload: %v", string(data))
 }
 
 func TestGetPayload(t *testing.T) {
@@ -276,7 +294,7 @@ func TestGetPayload(t *testing.T) {
 	// Find payload in Anychaindb server
 	contents, err := doGETRequest(endpoint, url, "", "")
 	if err != nil {
-		t.Errorf("Error in sending GET request: %s", contents)
+		t.Errorf("error in sending GET request: %s", contents)
 		return
 	}
 	resp := handler.Result{}
@@ -288,10 +306,10 @@ func TestGetPayload(t *testing.T) {
 	// Compare payloads
 	cnv2 := resp.Data.(map[string]interface{})
 	if cnv2["_id"] != cnv1.ID {
-		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
+		t.Errorf("payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
 		return
 	}
-	t.Logf("Got payload: %v", cnv2)
+	t.Logf("got payload: %v", cnv2)
 }
 
 func TestGetDecryptedPayload(t *testing.T) {
@@ -336,7 +354,7 @@ func TestGetDecryptedPayload(t *testing.T) {
 	// Find payload in Anychaindb server
 	contents, err := doGETRequest(endpoint, url, acc1.ID, acc1.Priv)
 	if err != nil {
-		t.Errorf("Error in sending GET request: %s", contents)
+		t.Errorf("error in sending GET request: %s", contents)
 		return
 	}
 	resp := handler.Result{}
@@ -349,9 +367,23 @@ func TestGetDecryptedPayload(t *testing.T) {
 	t.Log(string(contents))
 	cnv2 := resp.Data.(map[string]interface{})
 	if cnv2["_id"] != cnv1.ID {
-		t.Errorf("Payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
+		t.Errorf("payloads are not equal. Expected: %v, Output: %v", cnv1.ID, cnv2["_id"])
 		return
 	}
 	// TODO: Compare payload data
-	t.Logf("Got payload: %v", cnv2)
+	t.Logf("got payload: %v", cnv2)
+}
+
+func TestGetWrongPayload(t *testing.T) {
+	// Generate transaction request
+	endpoint := fmt.Sprintf("/v1/payloads")
+	url := *host + ":" + *apiPort
+	endpoint = endpoint + "/34"
+	// Find payload in Anychaindb server
+	_, err := doGETRequest(endpoint, url, "", "")
+	if err != notFoundCodeErr {
+		t.Errorf("error in getting wrong payload: %s", err)
+		return
+	}
+	t.Logf("wrong payload successfully detected. Returned status code: %s", err)
 }
