@@ -39,7 +39,7 @@ func checkPayloadAddTransaction(tx *transaction.Transaction, s *state.State) err
 	}
 	k, err := s.GetAccountPubKey(tx.Signer)
 	if err != nil {
-		return errors.New("pubkey can't be loaded: " + err.Error())
+		return errors.New("pubkey for account can't be loaded: " + err.Error())
 	}
 	if err := tx.Verify(k); err != nil {
 		return errors.New("tx can't be verified: " + err.Error())

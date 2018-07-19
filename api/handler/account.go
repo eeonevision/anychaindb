@@ -46,8 +46,13 @@ func PostAccountsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	defer r.Body.Close()
 
+	var mode string
+	if m := r.URL.Query().Get("mode"); m != "" {
+		mode = m
+	}
+
 	// Add account to blockchain
-	api := client.NewAPI(endpoint, nil, "")
+	api := client.NewAPI(endpoint, mode, nil, "")
 	id, pub, priv, err := api.CreateAccount()
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
@@ -101,7 +106,7 @@ func GetAccountsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	if offset < 0 {
 		offset = 0
 	}
-	api := client.NewAPI(endpoint, nil, "")
+	api := client.NewAPI(endpoint, "", nil, "")
 	searchReq := mongoQuery{
 		Query:  query,
 		Limit:  limit,
@@ -129,7 +134,7 @@ func GetAccountDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 			"ID should not be empty", nil, w)
 		return
 	}
-	api := client.NewAPI(endpoint, nil, "")
+	api := client.NewAPI(endpoint, "", nil, "")
 	acc, err := api.GetAccount(id)
 
 	// Temporary solution in case of introduce more right way of error handling

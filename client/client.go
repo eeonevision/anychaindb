@@ -32,37 +32,40 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-// API is the high level interface for Anychaindb client applications
+// API is the high level interface for Anychaindb client applications.
 type API interface {
 	AccountAPI
 	PayloadAPI
 }
 
-// AccountAPI describes all account related functions
+// AccountAPI describes all account related functions.
 type AccountAPI interface {
 	CreateAccount() (id, pub, priv string, err error)
 	GetAccount(id string) (*state.Account, error)
 	SearchAccounts(query []byte) ([]state.Account, error)
 }
 
-// PayloadAPI interface provides all transaction data related methods
+// PayloadAPI interface provides all transaction data related methods.
 type PayloadAPI interface {
 	AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error)
 	GetPayload(ID, receiverID, privKey string) (*state.Payload, error)
 	SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error)
 }
 
-// NewAPI constructs a new API instances based on an http transport
-func NewAPI(endpoint string, key *crypto.Key, accountID string) API {
-	base := NewHTTPClient(endpoint, key, accountID)
-	fast := NewFastClient(endpoint, key, accountID)
-	return &apiClient{endpoint, base, fast}
+// NewAPI constructs a new API instances based on an http transport.
+func NewAPI(endpoint, mode string, key *crypto.Key, accountID string) API {
+	// Set default mode
+	if mode == "" {
+		mode = "sync"
+	}
+	base := NewHTTPClient(endpoint, mode, key, accountID)
+	return &apiClient{endpoint, mode, base}
 }
 
 type apiClient struct {
 	endpoint string
-	base     *BaseClient
-	fast     *FastClient
+	mode     string
+	base     *baseClient
 }
 
 func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
@@ -70,9 +73,10 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 	if err != nil {
 		return "", "", "", err
 	}
-	api.base.Key = key
+	api.base.key = key
 	id = bson.NewObjectId().Hex()
-	if err := api.base.AddAccount(&state.Account{ID: id, PubKey: key.GetPubString()}); err != nil {
+	err = api.base.AddAccount(&state.Account{ID: id, PubKey: key.GetPubString()})
+	if err != nil {
 		return "", "", "", err
 	}
 	return id, key.GetPubString(), key.GetPrivString(), nil
@@ -121,14 +125,14 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 		// Reassign data from raw to encrypted and base64 encoded string
 		data.Data = base64.StdEncoding.EncodeToString(privateDataEnc)
 	}
-
-	if err = api.fast.AddPayload(&state.Payload{
+	err = api.base.AddPayload(&state.Payload{
 		ID:              id,
 		SenderAccountID: senderAccountID,
 		PublicData:      publicData,
 		PrivateData:     privData,
 		CreatedAt:       float64(time.Now().UnixNano() / 1000000),
-	}); err != nil {
+	})
+	if err != nil {
 		return "", err
 	}
 	return id, nil
@@ -164,7 +168,7 @@ func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) (
 	if len(payloads) == 0 {
 		return payloads, nil
 	}
-	// decrypt private data
+	// Decrypt private data
 	return api.decryptPrivateData(receiverID, privKey, payloads)
 }
 
