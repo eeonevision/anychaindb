@@ -183,7 +183,7 @@ func TestGetWrongAccount(t *testing.T) {
 	endpoint = endpoint + "/34"
 	// Find account in Anychaindb server
 	_, err := doGETRequest(endpoint, url, "", "")
-	if err.Error() == errNotFound.Error() {
+	if err.Error() != errNotFound.Error() {
 		t.Errorf("error in getting wrong account: %s", err)
 		return
 	}
@@ -381,7 +381,7 @@ func TestGetWrongPayload(t *testing.T) {
 	endpoint = endpoint + "/34"
 	// Find payload in Anychaindb server
 	_, err := doGETRequest(endpoint, url, "", "")
-	if err.Error() == errNotFound.Error() {
+	if err.Error() != errNotFound.Error() {
 		t.Errorf("error in getting wrong payload: %s", err)
 		return
 	}

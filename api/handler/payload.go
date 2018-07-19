@@ -176,14 +176,14 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	api := client.NewAPI(endpoint, nil, "")
 	cnv, err := api.GetPayload(id, re, pk)
 
-	// Check special case when account not found
 	// Temporary solution in case of introduce more right way of error handling
-	if err.Error() == errNotFound.Error() {
-		writeResult(http.StatusNotFound, err.Error(), nil, w)
-		return
-	}
 	if err != nil {
-		writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		// Check special case when account not found
+		if err.Error() == errNotFound.Error() {
+			writeResult(http.StatusNotFound, err.Error(), nil, w)
+		} else {
+			writeResult(http.StatusBadRequest, err.Error(), nil, w)
+		}
 		return
 	}
 
