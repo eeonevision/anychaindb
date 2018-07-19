@@ -131,8 +131,10 @@ func GetAccountDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	api := client.NewAPI(endpoint, nil, "")
 	acc, err := api.GetAccount(id)
+
 	// Check special case when account not found
-	if err == errNotFound {
+	// Temporary solution in case of introduce more right way of error handling
+	if err.Error() == errNotFound.Error() {
 		writeResult(http.StatusNotFound, err.Error(), nil, w)
 		return
 	}

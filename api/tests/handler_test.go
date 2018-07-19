@@ -41,7 +41,7 @@ var apiPort = flag.String("apiport", "26659", "api port")
 var rpcPort = flag.String("rpcport", "26657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
 
-var notFoundCodeErr = errors.New("404")
+var errNotFound = errors.New("404")
 
 func doPOSTRequest(endpoint, url, id, privKey string, data []byte) ([]byte, error) {
 	client := &http.Client{Timeout: time.Second * 30}
@@ -183,7 +183,7 @@ func TestGetWrongAccount(t *testing.T) {
 	endpoint = endpoint + "/34"
 	// Find account in Anychaindb server
 	_, err := doGETRequest(endpoint, url, "", "")
-	if err != notFoundCodeErr {
+	if err != errNotFound {
 		t.Errorf("error in getting wrong account: %s", err)
 		return
 	}
@@ -381,7 +381,7 @@ func TestGetWrongPayload(t *testing.T) {
 	endpoint = endpoint + "/34"
 	// Find payload in Anychaindb server
 	_, err := doGETRequest(endpoint, url, "", "")
-	if err != notFoundCodeErr {
+	if err != errNotFound {
 		t.Errorf("error in getting wrong payload: %s", err)
 		return
 	}
