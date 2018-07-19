@@ -86,6 +86,9 @@ func (k *Key) SetPrivString(priv string) error {
 }
 
 func (k *Key) Sign(hash []byte) (string, error) {
+	if k.priv == nil {
+		return "", errors.New("failed to initialize private key")
+	}
 	r, s, err := ecdsa.Sign(rand.Reader, k.priv, hash)
 	if err != nil {
 		return "", err
