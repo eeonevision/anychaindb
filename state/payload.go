@@ -75,11 +75,6 @@ func (s *State) GetPayload(id string) (*Payload, error) {
 	return result, s.DB.C(payloadsCollection).FindId(id).One(&result)
 }
 
-// ListPayloads method returns list of all payloads in state.
-func (s *State) ListPayloads() (result []*Payload, err error) {
-	return result, s.DB.C(payloadsCollection).Find(nil).All(&result)
-}
-
 // SearchPayloads method finds payloads using mongodb query language.
 func (s *State) SearchPayloads(query interface{}, limit, offset int) (result []*Payload, err error) {
 	return result, s.DB.C(payloadsCollection).Find(query).Skip(offset).Limit(limit).All(&result)

@@ -35,7 +35,7 @@ import (
 
 func main() {
 	// Parse CLI arguments
-	addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
+	addrPtr := flag.String("addr", "tcp://localhost:26658", "Listen address")
 	abciPtr := flag.String("abci", "socket", "socket | grpc")
 	dbHost := flag.String("dbhost", "localhost", "database host path")
 	dbName := flag.String("dbname", "anychaindb", "database name")

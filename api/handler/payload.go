@@ -60,13 +60,13 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	var req Request
 	err := decoder.Decode(&req)
 	if err != nil {
-		writeResult(http.StatusBadRequest, "Request decode error: "+err.Error(), nil, w)
+		writeResult(http.StatusBadRequest, "request decode error: "+err.Error(), nil, w)
 		return
 	}
 
 	var data Payload
 	if err := mapstructure.Decode(req.Data, &data); err != nil {
-		writeResult(http.StatusBadRequest, "Payload decode error: "+err.Error(), nil, w)
+		writeResult(http.StatusBadRequest, "payload decode error: "+err.Error(), nil, w)
 		return
 	}
 	defer r.Body.Close()
@@ -90,8 +90,8 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	// OK
-	writeResult(http.StatusAccepted, "Payload added", Payload{ID: id}, w)
+	writeResult(http.StatusAccepted, "payload added", Payload{ID: id}, w)
+	return
 }
 
 // GetPayloadsHandler uses BaseAPI for search and list transaction data.
@@ -112,7 +112,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		err := json.Unmarshal([]byte(q), &query)
 		if err != nil {
 			writeResult(http.StatusBadRequest,
-				"Cannot parse query parameter: "+err.Error(), nil, w)
+				"cannot parse query parameter: "+err.Error(), nil, w)
 			return
 		}
 	}
@@ -120,7 +120,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		limit, err = strconv.Atoi(l)
 		if err != nil {
 			writeResult(http.StatusBadRequest,
-				"Cannot parse limit parameter: "+err.Error(), nil, w)
+				"cannot parse limit parameter: "+err.Error(), nil, w)
 			return
 		}
 	}
@@ -128,7 +128,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		offset, err = strconv.Atoi(o)
 		if err != nil {
 			writeResult(http.StatusBadRequest,
-				"Cannot parse offset parameter: "+err.Error(), nil, w)
+				"cannot parse offset parameter: "+err.Error(), nil, w)
 			return
 		}
 	}
@@ -154,11 +154,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Empty payloads list
-	if cnv == nil {
-		writeResult(http.StatusNotFound, "Empty list", nil, w)
-		return
-	}
+
 	writeResult(http.StatusOK, "OK", cnv, w)
 	return
 }
@@ -171,7 +167,7 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	id := ps.ByName("id")
 	if id == "" {
 		writeResult(http.StatusBadRequest,
-			"ID should not be empty", nil, w)
+			"id should not be empty", nil, w)
 		return
 	}
 	// Get basic auth data: receiver's account id and private key
@@ -179,15 +175,16 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 	api := client.NewAPI(endpoint, nil, "")
 	cnv, err := api.GetPayload(id, re, pk)
+	// Check special case when payload not found
+	if err == errNotFound {
+		writeResult(http.StatusNotFound, err.Error(), nil, w)
+		return
+	}
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Payload not found
-	if cnv == nil {
-		writeResult(http.StatusNotFound, "Not Found", nil, w)
-		return
-	}
+
 	writeResult(http.StatusOK, "OK", cnv, w)
 	return
 }

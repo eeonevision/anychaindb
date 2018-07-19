@@ -32,9 +32,9 @@ import (
 
 func main() {
 	// Parse CLI arguments
-	endpointPtr := flag.String("endpoint", "http://0.0.0.0:46657", "Validator grpc endpoint address")
+	endpointPtr := flag.String("endpoint", "http://localhost:26657", "Validator grpc endpoint address")
 	ipPtr := flag.String("ip", "localhost", "Listen host ip")
-	portPtr := flag.String("port", "8888", "Listen host port")
+	portPtr := flag.String("port", "26659", "Listen host port")
 	logLevel := flag.String("loglevel", "*:info", "log level for anychaindb api module: rest-api:info")
 	flag.Parse()
 

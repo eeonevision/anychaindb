@@ -171,8 +171,8 @@ func (app *Application) Commit() types.ResponseCommit {
 	}
 }
 
-// MongoQuery is a struct for parse search query from a user.
-type MongoQuery struct {
+// mongoQuery is a struct for parse search query from a user.
+type mongoQuery struct {
 	Query  interface{} `json:"query,omitempty"`
 	Limit  int         `json:"limit,omitempty"`
 	Offset int         `json:"offset,omitempty"`
@@ -180,23 +180,25 @@ type MongoQuery struct {
 
 // Query method processes user's request.
 // Search endpoint uses Mongo DB query syntax.
-// For make search request uses MongoQuery struct.
+// For make search request uses mongoQuery struct.
 // The limit and offset fields are optional. All mongo query places in query field of struct.
 // Check mongo query syntax at:
 // https://docs.mongodb.com/manual/tutorial/query-documents/
 func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.ResponseQuery) {
+	var (
+		result interface{}
+		err    error
+	)
 	switch reqQuery.Path {
 	case "accounts":
 		{
-			var (
-				result interface{}
-				err    error
-			)
-			if reqQuery.Data != nil {
-				id := string(reqQuery.Data)
-				result, err = app.state.GetAccount(id)
+			if reqQuery.Data == nil {
+				resQuery.Code = CodeTypeQueryError
+				resQuery.Log = "id is not presented in query"
+				return
 			}
-			if err != nil && err != mgo.ErrNotFound {
+			result, err = app.state.GetAccount(string(reqQuery.Data))
+			if err != nil {
 				resQuery.Code = CodeTypeQueryError
 				resQuery.Log = err.Error()
 				return
@@ -206,17 +208,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 		}
 	case "accounts/search":
 		{
-			var (
-				result interface{}
-				err    error
-			)
 			if reqQuery.Data == nil {
 				resQuery.Code = CodeEmptySearchQuery
 				resQuery.Log = "search query is empty"
 				return
 			}
 			// Unmarshal search query
-			var mgoQuery MongoQuery
+			var mgoQuery mongoQuery
 			if err = json.Unmarshal(reqQuery.Data, &mgoQuery); err != nil {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
@@ -231,7 +229,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			}
 			// Search accounts in Database
 			result, err = app.state.SearchAccounts(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
-			if err != nil && err != mgo.ErrNotFound {
+			if err != nil {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return
@@ -241,15 +239,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 		}
 	case "payloads":
 		{
-			var (
-				result interface{}
-				err    error
-			)
-			if reqQuery.Data != nil {
-				result, err = app.state.GetPayload(string(reqQuery.Data))
-				app.logger.Debug("Got payload: %+v", result)
+			if reqQuery.Data == nil {
+				resQuery.Code = CodeTypeQueryError
+				resQuery.Log = "id is not presented in query"
+				return
 			}
-			if err != nil && err != mgo.ErrNotFound {
+			result, err = app.state.GetPayload(string(reqQuery.Data))
+			if err != nil {
 				resQuery.Code = CodeTypeQueryError
 				resQuery.Log = err.Error()
 				return
@@ -259,17 +255,13 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 		}
 	case "payloads/search":
 		{
-			var (
-				result interface{}
-				err    error
-			)
 			if reqQuery.Data == nil {
 				resQuery.Code = CodeEmptySearchQuery
 				resQuery.Log = "search query is empty"
 				return
 			}
 			// Unmarshal search query
-			var mgoQuery MongoQuery
+			var mgoQuery mongoQuery
 			if err = json.Unmarshal(reqQuery.Data, &mgoQuery); err != nil {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
@@ -284,7 +276,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			}
 			// Search transaction data in Database
 			result, err = app.state.SearchPayloads(mgoQuery.Query, mgoQuery.Limit, mgoQuery.Offset)
-			if err != nil && err != mgo.ErrNotFound {
+			if err != nil {
 				resQuery.Code = CodeParseSearchQueryError
 				resQuery.Log = err.Error()
 				return

@@ -54,13 +54,13 @@ func PostAccountsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	// OK
 	writeResult(http.StatusAccepted, "Accepted",
 		Account{
 			ID:   id,
 			Priv: priv,
 			Pub:  pub,
 		}, w)
+	return
 }
 
 // GetAccountsHandler uses BaseAPI for search and list accounts.
@@ -113,11 +113,7 @@ func GetAccountsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Empty accounts list
-	if acc == nil {
-		writeResult(http.StatusNotFound, "Empty list", nil, w)
-		return
-	}
+
 	writeResult(http.StatusOK, "OK", acc, w)
 	return
 }
@@ -135,15 +131,16 @@ func GetAccountDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	api := client.NewAPI(endpoint, nil, "")
 	acc, err := api.GetAccount(id)
+	// Check special case when account not found
+	if err == errNotFound {
+		writeResult(http.StatusNotFound, err.Error(), nil, w)
+		return
+	}
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
 		return
 	}
-	// Account not found
-	if acc == nil {
-		writeResult(http.StatusNotFound, "Not Found", nil, w)
-		return
-	}
+
 	writeResult(http.StatusOK, "OK", acc, w)
 	return
 }
