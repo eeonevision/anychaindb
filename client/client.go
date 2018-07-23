@@ -55,13 +55,15 @@ type PayloadAPI interface {
 // NewAPI constructs a new API instances based on an http transport.
 func NewAPI(endpoint, mode string, key *crypto.Key, accountID string) API {
 	base := newHTTPClient(endpoint, mode, key, accountID)
-	return &apiClient{endpoint, mode, base}
+	fast := newFastClient(endpoint, mode, key, accountID)
+	return &apiClient{endpoint, mode, base, fast}
 }
 
 type apiClient struct {
 	endpoint string
 	mode     string
 	base     *baseClient
+	fast     *fastClient
 }
 
 func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
@@ -79,7 +81,7 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 }
 
 func (api *apiClient) GetAccount(id string) (*state.Account, error) {
-	return api.base.getAccount(id)
+	return api.fast.getAccount(id)
 }
 
 func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
@@ -98,7 +100,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 
 	for _, data := range privData {
 		// Get receiver's public key
-		receiver, err := api.base.getAccount(data.ReceiverAccountID)
+		receiver, err := api.fast.getAccount(data.ReceiverAccountID)
 		if err != nil {
 			return "", errors.New(
 				"error in getting receiver's account " + data.ReceiverAccountID + ": " + err.Error(),
@@ -127,7 +129,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 		// Reassign data from raw to encrypted and base64 encoded string
 		data.Data = base64.StdEncoding.EncodeToString(privateDataEnc)
 	}
-	err = api.base.addPayload(&state.Payload{
+	err = api.fast.addPayload(&state.Payload{
 		ID:              id,
 		SenderAccountID: senderAccountID,
 		PublicData:      publicData,
@@ -176,7 +178,7 @@ func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) (
 
 func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []state.Payload) ([]state.Payload, error) {
 	// Get account's public key
-	acc, err := api.base.getAccount(receiverID)
+	acc, err := api.fast.getAccount(receiverID)
 	if err != nil {
 		return payloads, errors.New("invalid authorization account id: " + err.Error())
 	}
