@@ -12,8 +12,8 @@
 		},
 		{
 			"ImportPath": "github.com/btcsuite/btcd/btcec",
-			"Comment": "BTCD_0_12_0_BETA-783-gfdfc190",
-			"Rev": "fdfc19097e7ac6b57035062056f5b7b4638b8898"
+			"Comment": "BTCD_0_12_0_BETA-790-g9a2f952",
+			"Rev": "9a2f9524024889e129a5422aca2cff73cb3eabf6"
 		},
 		{
 			"ImportPath": "github.com/cloudflare/redoctober/padding",
@@ -59,38 +59,38 @@
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/log",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/log/level",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/log/term",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/metrics",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/metrics/discard",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/metrics/internal/lv",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-kit/kit/metrics/prometheus",
-			"Comment": "v0.7.0-30-g402eeb3",
-			"Rev": "402eeb3270d99fa153162aa3e96285c6c7037d57"
+			"Comment": "v0.7.0-34-gaf73865",
+			"Rev": "af7386548c7b8877fff3f25f6b67dddfc1e3ed0a"
 		},
 		{
 			"ImportPath": "github.com/go-logfmt/logfmt",
@@ -104,58 +104,58 @@
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/gogoproto",
-			"Comment": "v1.1.0",
-			"Rev": "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+			"Comment": "v1.1.1",
+			"Rev": "636bf0302bc95575d69441b25a2603156ffdddf1"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/jsonpb",
-			"Comment": "v1.1.0",
-			"Rev": "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+			"Comment": "v1.1.1",
+			"Rev": "636bf0302bc95575d69441b25a2603156ffdddf1"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
-			"Comment": "v1.1.0",
-			"Rev": "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+			"Comment": "v1.1.1",
+			"Rev": "636bf0302bc95575d69441b25a2603156ffdddf1"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
-			"Comment": "v1.1.0",
-			"Rev": "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+			"Comment": "v1.1.1",
+			"Rev": "636bf0302bc95575d69441b25a2603156ffdddf1"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/sortkeys",
-			"Comment": "v1.1.0",
-			"Rev": "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+			"Comment": "v1.1.1",
+			"Rev": "636bf0302bc95575d69441b25a2603156ffdddf1"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/types",
-			"Comment": "v1.1.0",
-			"Rev": "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+			"Comment": "v1.1.1",
+			"Rev": "636bf0302bc95575d69441b25a2603156ffdddf1"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
-			"Comment": "v1.1.0-18-g14aad3d",
-			"Rev": "14aad3d5ea4c323bcd7a2137e735da24a76e814c"
+			"Comment": "v1.1.0-19-g427e165",
+			"Rev": "427e165155e0a4ff5993a36657c1f733f5b0f782"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/ptypes",
-			"Comment": "v1.1.0-18-g14aad3d",
-			"Rev": "14aad3d5ea4c323bcd7a2137e735da24a76e814c"
+			"Comment": "v1.1.0-19-g427e165",
+			"Rev": "427e165155e0a4ff5993a36657c1f733f5b0f782"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/ptypes/any",
-			"Comment": "v1.1.0-18-g14aad3d",
-			"Rev": "14aad3d5ea4c323bcd7a2137e735da24a76e814c"
+			"Comment": "v1.1.0-19-g427e165",
+			"Rev": "427e165155e0a4ff5993a36657c1f733f5b0f782"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/ptypes/duration",
-			"Comment": "v1.1.0-18-g14aad3d",
-			"Rev": "14aad3d5ea4c323bcd7a2137e735da24a76e814c"
+			"Comment": "v1.1.0-19-g427e165",
+			"Rev": "427e165155e0a4ff5993a36657c1f733f5b0f782"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/ptypes/timestamp",
-			"Comment": "v1.1.0-18-g14aad3d",
-			"Rev": "14aad3d5ea4c323bcd7a2137e735da24a76e814c"
+			"Comment": "v1.1.0-19-g427e165",
+			"Rev": "427e165155e0a4ff5993a36657c1f733f5b0f782"
 		},
 		{
 			"ImportPath": "github.com/golang/snappy",
