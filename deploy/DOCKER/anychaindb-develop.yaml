@@ -50,16 +50,14 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
-    networks:
-      back:
-        ipv4_address: 172.16.238.03
+    network_mode: "host"
     expose:
       - ${ABCI_PORT}
     ports:
       - ${ABCI_PORT}:${ABCI_PORT}
     depends_on:
       - anychaindb-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:info
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://${NODE_IP}:${ABCI_PORT} --loglevel=*:info
 
   anychaindb-node-develop:
     image: anychaindb/node:develop
@@ -84,7 +82,7 @@ services:
       - anychaindb-abci-develop
     entrypoint: "sh -c \"\
       tendermint init && \
-      tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
+      tendermint node --proxy_app=tcp://${NODE_IP}:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
       \""
 
   anychaindb-rest-api-develop:
