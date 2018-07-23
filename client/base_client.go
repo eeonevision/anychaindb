@@ -84,6 +84,9 @@ func (c *baseClient) addAccount(acc *state.Account) error {
 
 func (c *baseClient) getAccount(id string) (*state.Account, error) {
 	resp, _ := c.tm.ABCIQuery("accounts", []byte(id))
+	if resp == nil {
+		return nil, errors.New("empty ABCI result")
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -96,6 +99,9 @@ func (c *baseClient) getAccount(id string) (*state.Account, error) {
 
 func (c *baseClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
 	resp, _ := c.tm.ABCIQuery("accounts/search", searchQuery)
+	if resp == nil {
+		return nil, errors.New("empty ABCI result")
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -122,6 +128,9 @@ func (c *baseClient) addPayload(cv *state.Payload) error {
 
 func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 	resp, _ := c.tm.ABCIQuery("payloads", []byte(id))
+	if resp == nil {
+		return nil, errors.New("empty ABCI result")
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -134,6 +143,9 @@ func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 
 func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
 	resp, _ := c.tm.ABCIQuery("payloads/search", searchQuery)
+	if resp == nil {
+		return nil, errors.New("empty ABCI result")
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
