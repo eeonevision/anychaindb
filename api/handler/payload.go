@@ -55,6 +55,11 @@ type Payload struct {
 func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
+	var mode string
+	if m := r.URL.Query().Get("mode"); m != "" {
+		mode = m
+	}
+
 	// Parse form's JSON data
 	decoder := json.NewDecoder(r.Body)
 	var req Request
@@ -77,7 +82,7 @@ func PostPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		writeResult(http.StatusUnauthorized, err.Error(), nil, w)
 		return
 	}
-	api := client.NewAPI(endpoint, key, req.AccountID)
+	api := client.NewAPI(endpoint, mode, key, req.AccountID)
 	privMrsh, err := json.Marshal(data.PrivateData)
 	if err != nil {
 		writeResult(http.StatusBadRequest, err.Error(), nil, w)
@@ -142,7 +147,7 @@ func GetPayloadsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	if offset < 0 {
 		offset = 0
 	}
-	api := client.NewAPI(endpoint, nil, "")
+	api := client.NewAPI(endpoint, "", nil, "")
 	searchReq := mongoQuery{
 		Query:  query,
 		Limit:  limit,
@@ -173,7 +178,7 @@ func GetPayloadDetailsHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	// Get basic auth data: receiver's account id and private key
 	re, pk, _ := r.BasicAuth()
 
-	api := client.NewAPI(endpoint, nil, "")
+	api := client.NewAPI(endpoint, "", nil, "")
 	cnv, err := api.GetPayload(id, re, pk)
 
 	// Temporary solution in case of introduce more right way of error handling

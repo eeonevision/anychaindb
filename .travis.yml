@@ -43,7 +43,7 @@ jobs:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
           bash deploy.sh --type=node --clean_all=false --node_ip=${NODE_IP};
-      elif [ "$TRAVIS_BRANCH" == "develop" ]; then
+      else
           make build_develop;
           bash deploy.sh --type=node-dev --clean_all=false --node_ip=${NODE_IP};
       fi

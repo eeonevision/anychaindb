@@ -1,101 +1,212 @@
-/*
- * Copyright (C) 2018 eeonevision
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package client
 
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/eeonevision/anychaindb/crypto"
 	"github.com/eeonevision/anychaindb/state"
 	"github.com/eeonevision/anychaindb/transaction"
 )
 
-type FastClient struct {
-	Endpoint  string
-	Key       *crypto.Key
-	AccountID string
+// ErrEmptyABCIResponse defines empty response from ABCI.
+var ErrEmptyABCIResponse = errors.New("empty ABCI response")
+
+type resultWrapper struct {
+	Result *core_types.ResultABCIQuery `json:"result"`
+}
+
+// fastClient struct contains config
+// parameters for performing requests.
+type fastClient struct {
+	key       *crypto.Key
+	endpoint  string
+	mode      string
+	accountID string
 	client    *http.Client
 }
 
-func NewFastClient(endpoint string, key *crypto.Key, accountID string) *FastClient {
-	tm := &http.Client{Timeout: 30 * time.Second}
-	return &FastClient{endpoint, key, accountID, tm}
+// newFastClient initializes new fast client instance.
+func newFastClient(endpoint, mode string, key *crypto.Key, accountID string) *fastClient {
+	// Set default mode
+	switch mode {
+	case "sync":
+		mode = "sync"
+		break
+	case "async":
+		mode = "async"
+		break
+	case "commit":
+		mode = "commit"
+		break
+	default:
+		mode = "sync"
+	}
+	return &fastClient{key, endpoint, mode, accountID, &http.Client{Timeout: 30 * time.Second}}
 }
 
-func (c *FastClient) BroadcastTxAsync(tx []byte) (*http.Response, error) {
-	ba := base64.StdEncoding.EncodeToString(tx)
-	txData := fmt.Sprintf(`{"jsonrpc":"2.0","id":"anything","method":"broadcast_tx_async","params": {"tx": "%s"}}`, ba)
-	req, err := http.NewRequest("POST", c.Endpoint, bytes.NewBuffer([]byte(txData)))
+func (c *fastClient) abciQuery(path, data string) (*core_types.ResultABCIQuery, error) {
+	var res *resultWrapper
+
+	req, err := http.NewRequest("GET", c.endpoint+"/abci_query?path=\""+path+"\"&data=\""+data+"\"", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "text/plain")
 
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	return resp, nil
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(contents, &res)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil {
+		return nil, ErrEmptyABCIResponse
+	}
+	if res.Result.Response.IsErr() {
+		return nil, errors.New(res.Result.Response.GetLog())
+	}
+	return res.Result, nil
 }
 
-func (c *FastClient) AddAccount(acc *state.Account) error {
+func (c *fastClient) broadcastTx(tx []byte) (interface{}, error) {
+	var res interface{}
+
+	ba := base64.StdEncoding.EncodeToString(tx)
+	txData := fmt.Sprintf(`{"jsonrpc":"2.0","id":"anything","method":"broadcast_tx_%s","params": {"tx": "%s"}}`, c.mode, ba)
+	req, err := http.NewRequest("POST", c.endpoint, bytes.NewBuffer([]byte(txData)))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "text/plain")
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(contents, &res)
+	// Check transport errors
+	if err != nil {
+		return nil, err
+	}
+	// Check special empty case
+	if res == nil {
+		return nil, ErrEmptyABCIResponse
+	}
+	// Check for async/sync response
+	if r, ok := res.(*core_types.ResultBroadcastTx); ok && r.Code != 0 {
+		return nil, errors.New(r.Log)
+	}
+	// Check for commit response
+	if r, ok := res.(*core_types.ResultBroadcastTxCommit); ok && (r.CheckTx.Code != 0 || r.DeliverTx.Code != 0) {
+		return nil, errors.New("check tx error: " + r.CheckTx.Log + "; deliver tx error: " + r.DeliverTx.Log)
+	}
+	return res, nil
+}
+
+func (c *fastClient) addAccount(acc *state.Account) error {
+	var err error
+
 	txBytes, err := acc.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.AccountAdd, c.AccountID, txBytes)
+	tx := transaction.New(transaction.AccountAdd, c.accountID, txBytes)
 	bs, _ := tx.ToBytes()
-	res, err := c.BroadcastTxAsync(bs)
+
+	_, err = c.broadcastTx(bs)
 	if err != nil {
 		return err
-	}
-	if res.StatusCode != 200 {
-		return fmt.Errorf("%v: %s", res.StatusCode, res.Status)
 	}
 	return nil
 }
 
-func (c *FastClient) AddPayload(data *state.Payload) error {
-	txBytes, err := data.MarshalMsg(nil)
+func (c *fastClient) getAccount(id string) (*state.Account, error) {
+	resp, err := c.abciQuery("accounts", id)
+	if err != nil {
+		return nil, err
+	}
+	acc := &state.Account{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (c *fastClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
+	resp, err := c.abciQuery("accounts/search", string(searchQuery))
+	if err != nil {
+		return nil, err
+	}
+	acc := []state.Account{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (c *fastClient) addPayload(cv *state.Payload) error {
+	txBytes, err := cv.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.PayloadAdd, c.AccountID, txBytes)
-	if err := tx.Sign(c.Key); err != nil {
+	tx := transaction.New(transaction.PayloadAdd, c.accountID, txBytes)
+	if err := tx.Sign(c.key); err != nil {
 		return err
 	}
 	bs, _ := tx.ToBytes()
-	res, err := c.BroadcastTxAsync(bs)
+
+	_, err = c.broadcastTx(bs)
 	if err != nil {
 		return err
 	}
-	if res.StatusCode != 200 {
-		return fmt.Errorf("%v: %s", res.StatusCode, res.Status)
-	}
 	return nil
+}
+
+func (c *fastClient) getPayload(id string) (*state.Payload, error) {
+	resp, err := c.abciQuery("payloads", id)
+	if err != nil {
+		return nil, err
+	}
+	res := &state.Payload{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *fastClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
+	resp, err := c.abciQuery("payloads/search", string(searchQuery))
+	if err != nil {
+		return nil, err
+	}
+	res := []state.Payload{}
+	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }

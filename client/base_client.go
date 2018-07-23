@@ -25,6 +25,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/tendermint/tendermint/rpc/core/types"
+
 	"github.com/eeonevision/anychaindb/crypto"
 	"github.com/eeonevision/anychaindb/state"
 	"github.com/eeonevision/anychaindb/transaction"
@@ -32,36 +34,57 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-type BaseClient struct {
-	Key       *crypto.Key
-	AccountID string
+// baseClient struct contains config
+// parameters for performing requests.
+type baseClient struct {
+	key       *crypto.Key
+	endpoint  string
+	mode      string
+	accountID string
 	tm        client.Client
 }
 
-func NewHTTPClient(endpoint string, key *crypto.Key, accountID string) *BaseClient {
+// newHTTPClient initializes new base client instance.
+func newHTTPClient(endpoint, mode string, key *crypto.Key, accountID string) *baseClient {
+	// Set default mode
+	switch mode {
+	case "sync":
+		mode = "sync"
+		break
+	case "async":
+		mode = "async"
+		break
+	case "commit":
+		mode = "commit"
+		break
+	default:
+		mode = "sync"
+	}
 	tm := client.NewHTTP(endpoint, "/websocket")
-	return &BaseClient{key, accountID, tm}
+	return &baseClient{key, endpoint, mode, accountID, tm}
 }
 
-func (c *BaseClient) AddAccount(acc *state.Account) error {
+func (c *baseClient) addAccount(acc *state.Account) error {
+	var err error
+
 	txBytes, err := acc.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.AccountAdd, c.AccountID, txBytes)
+	tx := transaction.New(transaction.AccountAdd, c.accountID, txBytes)
 	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxSync(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.Code != 0 {
-		return errors.New(res.Log)
-	}
-	return nil
+
+	return c.broadcastTx(bs)
 }
 
-func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
-	resp, _ := c.tm.ABCIQuery("accounts", []byte(id))
+func (c *baseClient) getAccount(id string) (*state.Account, error) {
+	resp, err := c.tm.ABCIQuery("accounts", []byte(id))
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
+	if err != nil {
+		return nil, err
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -72,8 +95,14 @@ func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
 	return acc, nil
 }
 
-func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error) {
-	resp, _ := c.tm.ABCIQuery("accounts/search", searchQuery)
+func (c *baseClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
+	resp, err := c.tm.ABCIQuery("accounts/search", searchQuery)
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
+	if err != nil {
+		return nil, err
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -84,28 +113,28 @@ func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error)
 	return acc, nil
 }
 
-func (c *BaseClient) AddPayload(cv *state.Payload) error {
+func (c *baseClient) addPayload(cv *state.Payload) error {
 	txBytes, err := cv.MarshalMsg(nil)
 	if err != nil {
 		return err
 	}
-	tx := transaction.New(transaction.PayloadAdd, c.AccountID, txBytes)
-	if err := tx.Sign(c.Key); err != nil {
+	tx := transaction.New(transaction.PayloadAdd, c.accountID, txBytes)
+	if err := tx.Sign(c.key); err != nil {
 		return err
 	}
 	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxSync(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.Code != 0 {
-		return errors.New(res.Log)
-	}
-	return nil
+
+	return c.broadcastTx(bs)
 }
 
-func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
-	resp, _ := c.tm.ABCIQuery("payloads", []byte(id))
+func (c *baseClient) getPayload(id string) (*state.Payload, error) {
+	resp, err := c.tm.ABCIQuery("payloads", []byte(id))
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
+	if err != nil {
+		return nil, err
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -116,8 +145,14 @@ func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
 	return res, nil
 }
 
-func (c *BaseClient) SearchPayloads(searchQuery []byte) ([]state.Payload, error) {
-	resp, _ := c.tm.ABCIQuery("payloads/search", searchQuery)
+func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
+	resp, err := c.tm.ABCIQuery("payloads/search", searchQuery)
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
+	if err != nil {
+		return nil, err
+	}
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
 	}
@@ -126,4 +161,36 @@ func (c *BaseClient) SearchPayloads(searchQuery []byte) ([]state.Payload, error)
 		return nil, err
 	}
 	return res, nil
+}
+
+func (c *baseClient) broadcastTx(bs []byte) error {
+	var res interface{}
+	var err error
+
+	switch c.mode {
+	case "async":
+		res, err = c.tm.BroadcastTxAsync(types.Tx(bs))
+	case "sync":
+		res, err = c.tm.BroadcastTxSync(types.Tx(bs))
+	case "commit":
+		res, err = c.tm.BroadcastTxCommit(types.Tx(bs))
+	}
+	// Check transport errors
+	if err != nil {
+		return err
+	}
+	// Check special empty case
+	if res == nil {
+		return errors.New("empty response")
+	}
+	// Check for async/sync response
+	if r, ok := res.(*core_types.ResultBroadcastTx); ok && r.Code != 0 {
+		return errors.New(r.Log)
+	}
+	// Check for commit response
+	if r, ok := res.(*core_types.ResultBroadcastTxCommit); ok && (r.CheckTx.Code != 0 || r.DeliverTx.Code != 0) {
+		return errors.New("check tx error: " + r.CheckTx.Log + "; deliver tx error: " + r.DeliverTx.Log)
+	}
+
+	return nil
 }
