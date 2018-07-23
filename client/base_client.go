@@ -22,14 +22,8 @@
 package client
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"time"
 
 	"github.com/tendermint/tendermint/rpc/core/types"
 
@@ -37,6 +31,7 @@ import (
 	"github.com/eeonevision/anychaindb/state"
 	"github.com/eeonevision/anychaindb/transaction"
 	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/tendermint/tendermint/types"
 )
 
 // baseClient struct contains config
@@ -79,11 +74,11 @@ func (c *baseClient) addAccount(acc *state.Account) error {
 	tx := transaction.New(transaction.AccountAdd, c.accountID, txBytes)
 	bs, _ := tx.ToBytes()
 
-	return c.doRequest(bs)
+	return c.broadcastTx(bs)
 }
 
 func (c *baseClient) getAccount(id string) (*state.Account, error) {
-	resp, err := c.abciQuery("accounts", id)
+	resp, err := c.tm.ABCIQuery("accounts", []byte(id))
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +90,7 @@ func (c *baseClient) getAccount(id string) (*state.Account, error) {
 }
 
 func (c *baseClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
-	resp, err := c.abciQuery("accounts/search", string(searchQuery))
+	resp, err := c.tm.ABCIQuery("accounts/search", searchQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -117,11 +112,11 @@ func (c *baseClient) addPayload(cv *state.Payload) error {
 	}
 	bs, _ := tx.ToBytes()
 
-	return c.doRequest(bs)
+	return c.broadcastTx(bs)
 }
 
 func (c *baseClient) getPayload(id string) (*state.Payload, error) {
-	resp, err := c.abciQuery("payloads", id)
+	resp, err := c.tm.ABCIQuery("payloads", []byte(id))
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +128,7 @@ func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 }
 
 func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
-	resp, err := c.abciQuery("payloads/search", string(searchQuery))
+	resp, err := c.tm.ABCIQuery("payloads/search", searchQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -144,26 +139,26 @@ func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error)
 	return res, nil
 }
 
-func (c *baseClient) doRequest(bs []byte) error {
+func (c *baseClient) broadcastTx(bs []byte) error {
 	var res interface{}
 	var err error
 
-	data, err := c.broadcastTx(bs)
+	switch c.mode {
+	case "async":
+		res, err = c.tm.BroadcastTxAsync(types.Tx(bs))
+	case "sync":
+		res, err = c.tm.BroadcastTxSync(types.Tx(bs))
+	case "commit":
+		res, err = c.tm.BroadcastTxCommit(types.Tx(bs))
+	}
 	// Check transport errors
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(data, &res)
-	// Check unmarshalling errors
-	if err != nil {
-		return err
-	}
-
 	// Check special empty case
 	if res == nil {
 		return errors.New("empty response")
 	}
-
 	// Check for async/sync response
 	if r, ok := res.(*core_types.ResultBroadcastTx); ok && r.Code != 0 {
 		return errors.New(r.Log)
@@ -174,68 +169,4 @@ func (c *baseClient) doRequest(bs []byte) error {
 	}
 
 	return nil
-}
-
-func (c *baseClient) broadcastTx(tx []byte) ([]byte, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
-
-	ba := base64.StdEncoding.EncodeToString(tx)
-	txData := fmt.Sprintf(`{"jsonrpc":"2.0","id":"anything","method":"broadcast_tx_%s","params": {"tx": "%s"}}`, c.mode, ba)
-	req, err := http.NewRequest("POST", c.endpoint, bytes.NewBuffer([]byte(txData)))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "text/plain")
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return contents, nil
-}
-
-func (c *baseClient) abciQuery(path, data string) (*core_types.ResultABCIQuery, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
-
-	req, err := http.NewRequest("GET", c.endpoint+"/abci_query?path="+path+"&data=\""+data+"\"", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var res *core_types.ResultABCIQuery
-	err = json.Unmarshal(contents, &res)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check special empty result case
-	if res == nil {
-		return nil, errors.New("empty ABCI result")
-	}
-
-	// Check error at blockchain stage
-	if res.Response.GetCode() != 0 {
-		return nil, errors.New(res.Response.GetLog())
-	}
-
-	return res, nil
 }
