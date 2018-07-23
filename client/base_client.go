@@ -79,8 +79,14 @@ func (c *baseClient) addAccount(acc *state.Account) error {
 
 func (c *baseClient) getAccount(id string) (*state.Account, error) {
 	resp, err := c.tm.ABCIQuery("accounts", []byte(id))
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
 	if err != nil {
 		return nil, err
+	}
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	acc := &state.Account{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
@@ -91,8 +97,14 @@ func (c *baseClient) getAccount(id string) (*state.Account, error) {
 
 func (c *baseClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
 	resp, err := c.tm.ABCIQuery("accounts/search", searchQuery)
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
 	if err != nil {
 		return nil, err
+	}
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	acc := []state.Account{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
@@ -117,8 +129,14 @@ func (c *baseClient) addPayload(cv *state.Payload) error {
 
 func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 	resp, err := c.tm.ABCIQuery("payloads", []byte(id))
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
 	if err != nil {
 		return nil, err
+	}
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	res := &state.Payload{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
@@ -129,8 +147,14 @@ func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 
 func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
 	resp, err := c.tm.ABCIQuery("payloads/search", searchQuery)
+	if resp == nil {
+		return nil, errors.New("empty ABCI response")
+	}
 	if err != nil {
 		return nil, err
+	}
+	if resp.Response.IsErr() {
+		return nil, errors.New(resp.Response.GetLog())
 	}
 	res := []state.Payload{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
