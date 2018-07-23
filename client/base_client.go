@@ -22,8 +22,14 @@
 package client
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"time"
 
 	"github.com/tendermint/tendermint/rpc/core/types"
 
@@ -31,13 +37,13 @@ import (
 	"github.com/eeonevision/anychaindb/state"
 	"github.com/eeonevision/anychaindb/transaction"
 	"github.com/tendermint/tendermint/rpc/client"
-	"github.com/tendermint/tendermint/types"
 )
 
 // baseClient struct contains config
 // parameters for performing requests.
 type baseClient struct {
 	key       *crypto.Key
+	endpoint  string
 	mode      string
 	accountID string
 	tm        client.Client
@@ -45,8 +51,22 @@ type baseClient struct {
 
 // newHTTPClient initializes new base client instance.
 func newHTTPClient(endpoint, mode string, key *crypto.Key, accountID string) *baseClient {
+	// Set default mode
+	switch mode {
+	case "sync":
+		mode = "sync"
+		break
+	case "async":
+		mode = "async"
+		break
+	case "commit":
+		mode = "commit"
+		break
+	default:
+		mode = "sync"
+	}
 	tm := client.NewHTTP(endpoint, "/websocket")
-	return &baseClient{key, mode, accountID, tm}
+	return &baseClient{key, endpoint, mode, accountID, tm}
 }
 
 func (c *baseClient) addAccount(acc *state.Account) error {
@@ -128,40 +148,52 @@ func (c *baseClient) doRequest(bs []byte) error {
 	var res interface{}
 	var err error
 
-	switch c.mode {
-	case "async":
-		res, err = c.tm.BroadcastTxAsync(types.Tx(bs))
-		break
-	case "sync":
-		res, err = c.tm.BroadcastTxSync(types.Tx(bs))
-		break
-	default:
-		var r *core_types.ResultBroadcastTxCommit
-		r, err = c.tm.BroadcastTxCommit(types.Tx(bs))
-		if r.CheckTx.Code != 0 {
-			res = &core_types.ResultBroadcastTx{
-				Code: r.CheckTx.Code,
-				Log:  r.CheckTx.Log,
-			}
-			break
-		}
-		res = &core_types.ResultBroadcastTx{
-			Code: r.DeliverTx.Code,
-			Log:  r.DeliverTx.Log,
-		}
-		break
+	data, err := c.broadcastTx(bs)
+	// Check transport errors
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &res)
+	// Check unmarshalling errors
+	if err != nil {
+		return err
+	}
+	// Check for async/sync response
+	if r, ok := res.(*core_types.ResultBroadcastTx); ok && r.Code != 0 {
+		return errors.New(r.Log)
+	}
+	// Check for commit response
+	if r, ok := res.(*core_types.ResultBroadcastTxCommit); ok && (r.CheckTx.Code != 0 || r.DeliverTx.Code != 0) {
+		return errors.New("check tx error: " + r.CheckTx.Log + "; deliver tx error: " + r.DeliverTx.Log)
 	}
 	// Check special empty case
 	if res == nil {
 		return errors.New("empty response")
 	}
-	// Check transport errors
-	if err != nil {
-		return err
-	}
-	// Check transaction related errors
-	if r := res.(*core_types.ResultBroadcastTx); r.Code != 0 {
-		return errors.New(r.Log)
-	}
 	return nil
+}
+
+func (c *baseClient) broadcastTx(tx []byte) ([]byte, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+
+	ba := base64.StdEncoding.EncodeToString(tx)
+	txData := fmt.Sprintf(`{"jsonrpc":"2.0","id":"anything","method":"broadcast_tx_%s","params": {"tx": "%s"}}`, c.mode, ba)
+	req, err := http.NewRequest("POST", c.endpoint, bytes.NewBuffer([]byte(txData)))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "text/plain")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
 }

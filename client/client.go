@@ -54,10 +54,6 @@ type PayloadAPI interface {
 
 // NewAPI constructs a new API instances based on an http transport.
 func NewAPI(endpoint, mode string, key *crypto.Key, accountID string) API {
-	// Set default mode
-	if mode == "" {
-		mode = "sync"
-	}
 	base := newHTTPClient(endpoint, mode, key, accountID)
 	return &apiClient{endpoint, mode, base}
 }
