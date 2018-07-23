@@ -34,22 +34,22 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-// BaseClient struct contains config
+// baseClient struct contains config
 // parameters for performing requests.
-type BaseClient struct {
+type baseClient struct {
 	key       *crypto.Key
 	mode      string
 	accountID string
 	tm        client.Client
 }
 
-// NewHTTPClient initializes new base client instance.
-func NewHTTPClient(endpoint, mode string, key *crypto.Key, accountID string) *BaseClient {
+// newHTTPClient initializes new base client instance.
+func newHTTPClient(endpoint, mode string, key *crypto.Key, accountID string) *baseClient {
 	tm := client.NewHTTP(endpoint, "/websocket")
-	return &BaseClient{key, mode, accountID, tm}
+	return &baseClient{key, mode, accountID, tm}
 }
 
-func (c *BaseClient) AddAccount(acc *state.Account) error {
+func (c *baseClient) addAccount(acc *state.Account) error {
 	var err error
 
 	txBytes, err := acc.MarshalMsg(nil)
@@ -62,7 +62,7 @@ func (c *BaseClient) AddAccount(acc *state.Account) error {
 	return c.doRequest(bs)
 }
 
-func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
+func (c *baseClient) getAccount(id string) (*state.Account, error) {
 	resp, _ := c.tm.ABCIQuery("accounts", []byte(id))
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
@@ -74,7 +74,7 @@ func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
 	return acc, nil
 }
 
-func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error) {
+func (c *baseClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
 	resp, _ := c.tm.ABCIQuery("accounts/search", searchQuery)
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
@@ -86,7 +86,7 @@ func (c *BaseClient) SearchAccounts(searchQuery []byte) ([]state.Account, error)
 	return acc, nil
 }
 
-func (c *BaseClient) AddPayload(cv *state.Payload) error {
+func (c *baseClient) addPayload(cv *state.Payload) error {
 	txBytes, err := cv.MarshalMsg(nil)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (c *BaseClient) AddPayload(cv *state.Payload) error {
 	return c.doRequest(bs)
 }
 
-func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
+func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 	resp, _ := c.tm.ABCIQuery("payloads", []byte(id))
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
@@ -112,7 +112,7 @@ func (c *BaseClient) GetPayload(id string) (*state.Payload, error) {
 	return res, nil
 }
 
-func (c *BaseClient) SearchPayloads(searchQuery []byte) ([]state.Payload, error) {
+func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
 	resp, _ := c.tm.ABCIQuery("payloads/search", searchQuery)
 	if resp.Response.IsErr() {
 		return nil, errors.New(resp.Response.GetLog())
@@ -124,7 +124,7 @@ func (c *BaseClient) SearchPayloads(searchQuery []byte) ([]state.Payload, error)
 	return res, nil
 }
 
-func (c *BaseClient) doRequest(bs []byte) error {
+func (c *baseClient) doRequest(bs []byte) error {
 	var res interface{}
 	var err error
 

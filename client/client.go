@@ -58,14 +58,14 @@ func NewAPI(endpoint, mode string, key *crypto.Key, accountID string) API {
 	if mode == "" {
 		mode = "sync"
 	}
-	base := NewHTTPClient(endpoint, mode, key, accountID)
+	base := newHTTPClient(endpoint, mode, key, accountID)
 	return &apiClient{endpoint, mode, base}
 }
 
 type apiClient struct {
 	endpoint string
 	mode     string
-	base     *BaseClient
+	base     *baseClient
 }
 
 func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
@@ -75,7 +75,7 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 	}
 	api.base.key = key
 	id = bson.NewObjectId().Hex()
-	err = api.base.AddAccount(&state.Account{ID: id, PubKey: key.GetPubString()})
+	err = api.base.addAccount(&state.Account{ID: id, PubKey: key.GetPubString()})
 	if err != nil {
 		return "", "", "", err
 	}
@@ -83,11 +83,11 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 }
 
 func (api *apiClient) GetAccount(id string) (*state.Account, error) {
-	return api.base.GetAccount(id)
+	return api.base.getAccount(id)
 }
 
 func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
-	return api.base.SearchAccounts(query)
+	return api.base.searchAccounts(query)
 }
 
 func (api *apiClient) AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error) {
@@ -102,7 +102,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 
 	for _, data := range privData {
 		// Get receiver's public key
-		receiver, err := api.GetAccount(data.ReceiverAccountID)
+		receiver, err := api.base.getAccount(data.ReceiverAccountID)
 		if err != nil {
 			return "", errors.New(
 				"error in getting receiver's account " + data.ReceiverAccountID + ": " + err.Error(),
@@ -125,7 +125,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 		// Reassign data from raw to encrypted and base64 encoded string
 		data.Data = base64.StdEncoding.EncodeToString(privateDataEnc)
 	}
-	err = api.base.AddPayload(&state.Payload{
+	err = api.base.addPayload(&state.Payload{
 		ID:              id,
 		SenderAccountID: senderAccountID,
 		PublicData:      publicData,
@@ -139,7 +139,7 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 }
 
 func (api *apiClient) GetPayload(id, receiverID, privKey string) (*state.Payload, error) {
-	payload, err := api.base.GetPayload(id)
+	payload, err := api.base.getPayload(id)
 	if err != nil {
 		return payload, err
 	}
@@ -156,7 +156,7 @@ func (api *apiClient) GetPayload(id, receiverID, privKey string) (*state.Payload
 }
 
 func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error) {
-	payloads, err := api.base.SearchPayloads(query)
+	payloads, err := api.base.searchPayloads(query)
 	if err != nil {
 		return payloads, err
 	}
@@ -174,7 +174,7 @@ func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) (
 
 func (api *apiClient) decryptPrivateData(receiverID, privKey string, payloads []state.Payload) ([]state.Payload, error) {
 	// Get account's public key
-	acc, err := api.GetAccount(receiverID)
+	acc, err := api.base.getAccount(receiverID)
 	if err != nil {
 		return payloads, errors.New("invalid authorization account id: " + err.Error())
 	}
