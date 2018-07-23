@@ -98,15 +98,19 @@ fi
 if [ "$type" = "node" ]; then
     prepare
     echo "[RELEASE] Deploying AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
     docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "node-dev" ]; then
     prepare
     echo "[DEVELOP] Deploying AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
     docker-compose -f anychaindb-develop.yaml up -d
 elif [ "$type" = "update" ]; then
     echo "[RELEASE] Starting AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
     docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "update-dev" ]; then
     echo "[DEVELOP] Starting AnychainDB node..."
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
     docker-compose -f anychaindb-develop.yaml up -d
 fi
