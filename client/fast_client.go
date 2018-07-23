@@ -26,9 +26,12 @@ var (
 	ErrEmptyRPCResponse  = errors.New("empty RPC response")
 )
 
-type resultWrapper struct {
-	Result *core_types.ResultABCIQuery `json:"result"`
-}
+// Broadcast Modes.
+var (
+	sync   = "sync"
+	async  = "async"
+	commit = "commit"
+)
 
 // fastClient struct contains config
 // parameters for performing requests.
@@ -45,16 +48,16 @@ func newFastClient(endpoint, mode string, key *crypto.Key, accountID string) *fa
 	// Set default mode
 	switch mode {
 	case "sync":
-		mode = "sync"
+		mode = sync
 		break
 	case "async":
-		mode = "async"
+		mode = async
 		break
 	case "commit":
-		mode = "commit"
+		mode = commit
 		break
 	default:
-		mode = "sync"
+		mode = sync
 	}
 	return &fastClient{key, endpoint, mode, accountID, &http.Client{Timeout: 30 * time.Second}}
 }
@@ -120,27 +123,32 @@ func (c *fastClient) abciQuery(path string, data []byte) (*core_types.ResultABCI
 
 func (c *fastClient) broadcastTx(tx []byte) (interface{}, error) {
 	var rpcRes *rpctypes.RPCResponse
-	var brcRes interface{}
 
 	rpcRes, err := c.doPOSTRequest("broadcast_tx_"+c.mode, fmt.Sprintf(`{"tx": "%s"}`, base64.StdEncoding.EncodeToString(tx)))
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(rpcRes.Result, &brcRes)
+	// Check for commit mode
+	if c.mode == commit {
+		var data *core_types.ResultBroadcastTxCommit
+		err = json.Unmarshal(rpcRes.Result, &data)
+		if data.CheckTx.Code != 0 || data.DeliverTx.Code != 0 {
+			return nil, errors.New("check tx error: " + data.CheckTx.Log + "; deliver tx error: " + data.DeliverTx.Log)
+		}
+		return data, nil
+	}
+	// Check for sync/async modes
+	var data *core_types.ResultBroadcastTx
+	err = json.Unmarshal(rpcRes.Result, &data)
 	if err != nil {
 		return nil, err
 	}
-	// Check for async/sync response
-	if r, ok := brcRes.(*core_types.ResultBroadcastTx); ok && r.Code != 0 {
-		return nil, errors.New(r.Log)
-	}
-	// Check for commit response
-	if r, ok := brcRes.(*core_types.ResultBroadcastTxCommit); ok && (r.CheckTx.Code != 0 || r.DeliverTx.Code != 0) {
-		return nil, errors.New("check tx error: " + r.CheckTx.Log + "; deliver tx error: " + r.DeliverTx.Log)
+	if data.Code != 0 {
+		return nil, errors.New(data.Log)
 	}
 
-	return brcRes, nil
+	return data, nil
 }
 
 func (c *fastClient) addAccount(acc *state.Account) error {
