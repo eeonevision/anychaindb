@@ -54,15 +54,13 @@ type PayloadAPI interface {
 
 // NewAPI constructs a new API instances based on an http transport.
 func NewAPI(endpoint, mode string, key *crypto.Key, accountID string) API {
-	base := newHTTPClient(endpoint, mode, key, accountID)
 	fast := newFastClient(endpoint, mode, key, accountID)
-	return &apiClient{endpoint, mode, base, fast}
+	return &apiClient{endpoint, mode, fast}
 }
 
 type apiClient struct {
 	endpoint string
 	mode     string
-	base     *baseClient
 	fast     *fastClient
 }
 
@@ -71,9 +69,9 @@ func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
 	if err != nil {
 		return "", "", "", err
 	}
-	api.base.key = key
+	api.fast.key = key
 	id = bson.NewObjectId().Hex()
-	err = api.base.addAccount(&state.Account{ID: id, PubKey: key.GetPubString()})
+	err = api.fast.addAccount(&state.Account{ID: id, PubKey: key.GetPubString()})
 	if err != nil {
 		return "", "", "", err
 	}
@@ -85,7 +83,7 @@ func (api *apiClient) GetAccount(id string) (*state.Account, error) {
 }
 
 func (api *apiClient) SearchAccounts(query []byte) ([]state.Account, error) {
-	return api.base.searchAccounts(query)
+	return api.fast.searchAccounts(query)
 }
 
 func (api *apiClient) AddPayload(senderAccountID string, publicData interface{}, privateData []byte) (ID string, err error) {
@@ -104,12 +102,6 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 		if err != nil {
 			return "", errors.New(
 				"error in getting receiver's account " + data.ReceiverAccountID + ": " + err.Error(),
-			)
-		}
-		// Check special case if account is empty
-		if receiver == nil {
-			return "", errors.New(
-				"error in getting receiver's account " + data.ReceiverAccountID + ": " + "empty result",
 			)
 		}
 		receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
@@ -143,16 +135,16 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 }
 
 func (api *apiClient) GetPayload(id, receiverID, privKey string) (*state.Payload, error) {
-	payload, err := api.base.getPayload(id)
+	payload, err := api.fast.getPayload(id)
 	if err != nil {
 		return payload, err
 	}
-	// Check if decoding not needed
-	if receiverID == "" && privKey == "" {
-		return payload, nil
-	}
 	// Check if payload result is empty
 	if payload == nil {
+		return nil, nil
+	}
+	// Check if decoding not needed
+	if receiverID == "" && privKey == "" {
 		return payload, nil
 	}
 	res, err := api.decryptPrivateData(receiverID, privKey, []state.Payload{*payload})
@@ -160,16 +152,16 @@ func (api *apiClient) GetPayload(id, receiverID, privKey string) (*state.Payload
 }
 
 func (api *apiClient) SearchPayloads(query []byte, receiverID, privKey string) ([]state.Payload, error) {
-	payloads, err := api.base.searchPayloads(query)
+	payloads, err := api.fast.searchPayloads(query)
 	if err != nil {
 		return payloads, err
 	}
-	// Check if decoding not needed
-	if receiverID == "" && privKey == "" {
-		return payloads, nil
-	}
 	// Check if payload result is empty
 	if len(payloads) == 0 {
+		return payloads, nil
+	}
+	// Check if decoding not needed
+	if receiverID == "" && privKey == "" {
 		return payloads, nil
 	}
 	// Decrypt private data
