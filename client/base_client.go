@@ -83,12 +83,9 @@ func (c *baseClient) addAccount(acc *state.Account) error {
 }
 
 func (c *baseClient) getAccount(id string) (*state.Account, error) {
-	resp, _ := c.tm.ABCIQuery("accounts", []byte(id))
-	if resp == nil {
-		return nil, errors.New("empty ABCI result")
-	}
-	if resp.Response.IsErr() {
-		return nil, errors.New(resp.Response.GetLog())
+	resp, err := c.abciQuery("accounts", id)
+	if err != nil {
+		return nil, err
 	}
 	acc := &state.Account{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
@@ -98,12 +95,9 @@ func (c *baseClient) getAccount(id string) (*state.Account, error) {
 }
 
 func (c *baseClient) searchAccounts(searchQuery []byte) ([]state.Account, error) {
-	resp, _ := c.tm.ABCIQuery("accounts/search", searchQuery)
-	if resp == nil {
-		return nil, errors.New("empty ABCI result")
-	}
-	if resp.Response.IsErr() {
-		return nil, errors.New(resp.Response.GetLog())
+	resp, err := c.abciQuery("accounts/search", string(searchQuery))
+	if err != nil {
+		return nil, err
 	}
 	acc := []state.Account{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &acc); err != nil {
@@ -127,12 +121,9 @@ func (c *baseClient) addPayload(cv *state.Payload) error {
 }
 
 func (c *baseClient) getPayload(id string) (*state.Payload, error) {
-	resp, _ := c.tm.ABCIQuery("payloads", []byte(id))
-	if resp == nil {
-		return nil, errors.New("empty ABCI result")
-	}
-	if resp.Response.IsErr() {
-		return nil, errors.New(resp.Response.GetLog())
+	resp, err := c.abciQuery("payloads", id)
+	if err != nil {
+		return nil, err
 	}
 	res := &state.Payload{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
@@ -142,12 +133,9 @@ func (c *baseClient) getPayload(id string) (*state.Payload, error) {
 }
 
 func (c *baseClient) searchPayloads(searchQuery []byte) ([]state.Payload, error) {
-	resp, _ := c.tm.ABCIQuery("payloads/search", searchQuery)
-	if resp == nil {
-		return nil, errors.New("empty ABCI result")
-	}
-	if resp.Response.IsErr() {
-		return nil, errors.New(resp.Response.GetLog())
+	resp, err := c.abciQuery("payloads/search", string(searchQuery))
+	if err != nil {
+		return nil, err
 	}
 	res := []state.Payload{}
 	if err := json.Unmarshal(resp.Response.GetValue(), &res); err != nil {
@@ -170,6 +158,12 @@ func (c *baseClient) doRequest(bs []byte) error {
 	if err != nil {
 		return err
 	}
+
+	// Check special empty case
+	if res == nil {
+		return errors.New("empty response")
+	}
+
 	// Check for async/sync response
 	if r, ok := res.(*core_types.ResultBroadcastTx); ok && r.Code != 0 {
 		return errors.New(r.Log)
@@ -178,10 +172,7 @@ func (c *baseClient) doRequest(bs []byte) error {
 	if r, ok := res.(*core_types.ResultBroadcastTxCommit); ok && (r.CheckTx.Code != 0 || r.DeliverTx.Code != 0) {
 		return errors.New("check tx error: " + r.CheckTx.Log + "; deliver tx error: " + r.DeliverTx.Log)
 	}
-	// Check special empty case
-	if res == nil {
-		return errors.New("empty response")
-	}
+
 	return nil
 }
 
@@ -208,4 +199,43 @@ func (c *baseClient) broadcastTx(tx []byte) ([]byte, error) {
 	}
 
 	return contents, nil
+}
+
+func (c *baseClient) abciQuery(path, data string) (*core_types.ResultABCIQuery, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+
+	req, err := http.NewRequest("GET", c.endpoint+"/abci_query?path="+path+"&data=\""+data+"\"", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var res *core_types.ResultABCIQuery
+	err = json.Unmarshal(contents, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check special empty result case
+	if res == nil {
+		return nil, errors.New("empty ABCI result")
+	}
+
+	// Check error at blockchain stage
+	if res.Response.GetCode() != 0 {
+		return nil, errors.New(res.Response.GetLog())
+	}
+
+	return res, nil
 }
