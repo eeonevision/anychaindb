@@ -37,6 +37,7 @@ import (
 )
 
 var host = flag.String("host", "localhost", "machine host")
+var apiMode = flag.String("apimode", "sync", "api requests processing mode")
 var apiPort = flag.String("apiport", "26659", "api port")
 var rpcPort = flag.String("rpcport", "26657", "rpc port")
 var update = flag.Bool("update", false, "update .golden files")
@@ -45,7 +46,7 @@ var errNotFound = errors.New("404")
 
 func doPOSTRequest(endpoint, url, id, privKey string, data []byte) ([]byte, error) {
 	client := &http.Client{Timeout: time.Second * 30}
-	req, _ := http.NewRequest("POST", "http://"+url+endpoint, bytes.NewBuffer(data))
+	req, _ := http.NewRequest("POST", "http://"+url+endpoint+"?mode="+*apiMode, bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json")
 	if id != "" && privKey != "" {
 		req.SetBasicAuth(id, privKey)
@@ -130,7 +131,7 @@ func TestCreateAccount(t *testing.T) {
 		// Wait for transaction approve
 		time.Sleep(time.Second * 5)
 	}
-	t.Logf("Added account: %v", account)
+	t.Logf("added account: %v", account)
 }
 
 func TestGetAccount(t *testing.T) {
@@ -176,7 +177,7 @@ func TestGetAccount(t *testing.T) {
 	t.Logf("got account: %v", acc2)
 }
 
-func TestGetWrongAccount(t *testing.T) {
+func TestDetectNotFoundAccount(t *testing.T) {
 	// Generate transaction request
 	endpoint := fmt.Sprintf("/v1/accounts")
 	url := *host + ":" + *apiPort
@@ -187,7 +188,7 @@ func TestGetWrongAccount(t *testing.T) {
 		t.Errorf("error in getting wrong account: %s", err)
 		return
 	}
-	t.Logf("wrong account successfully detected. Returned status code: %s", err)
+	t.Logf("returned correct status code for not found account: %s", err)
 }
 
 type conversion struct {
@@ -374,7 +375,7 @@ func TestGetDecryptedPayload(t *testing.T) {
 	t.Logf("got payload: %v", cnv2)
 }
 
-func TestGetWrongPayload(t *testing.T) {
+func TestDetectNotFoundPayload(t *testing.T) {
 	// Generate transaction request
 	endpoint := fmt.Sprintf("/v1/payloads")
 	url := *host + ":" + *apiPort
@@ -385,5 +386,5 @@ func TestGetWrongPayload(t *testing.T) {
 		t.Errorf("error in getting wrong payload: %s", err)
 		return
 	}
-	t.Logf("wrong payload successfully detected. Returned status code: %s", err)
+	t.Logf("returned correct status code for not found payload: %s", err)
 }

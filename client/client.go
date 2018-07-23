@@ -65,7 +65,7 @@ func NewAPI(endpoint, mode string, key *crypto.Key, accountID string) API {
 type apiClient struct {
 	endpoint string
 	mode     string
-	base     *baseClient
+	base     *BaseClient
 }
 
 func (api *apiClient) CreateAccount() (id, pub, priv string, err error) {
