@@ -29,6 +29,14 @@ After you can get access to post new data (payload) to AnychainDB.
 + 405 Method Not Allowed - Requested method is not supported for the specified resource.
 + 429 Too Many Requests - Exceeded AnychainDB API limits.
 
+## Broadcasting
+AnychainDB API supports three modes of posting data to blockchain:
++ **async** - will return result immediately without waiting for checks in blockchain;
++ **sync** *(default)* - will return result after performing base checking;
++ **commit** - will return result after the transaction was committed in the block.
+
+By default ***sync*** mode is used. You can change it by adding *?mode={async|sync|commit}* query parameter in POST-requests to REST-API.
+
 ## Accounts [/v1/accounts]
 
 This resource is intended for create accounts.
@@ -154,8 +162,8 @@ Unique receiver account identifier in blockchain (i.e. CPA Network)
 Public data available to all
 + private_data: anyprivatedata (string)
 Private data encrypted with public key of receiver
-+ created_at: 2512351252135 (number)
-Unix time (seconds) datetime of conversion
++ created_at: 1531501579546 (number)
+Unix time (milliseconds) datetime of conversion
 
 ## PayloadPost (object)
 
