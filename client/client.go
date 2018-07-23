@@ -104,6 +104,12 @@ func (api *apiClient) AddPayload(senderAccountID string, publicData interface{},
 				"error in getting receiver's account " + data.ReceiverAccountID + ": " + err.Error(),
 			)
 		}
+		// Check special case if account is empty
+		if receiver == nil {
+			return "", errors.New(
+				"error in getting receiver's account " + data.ReceiverAccountID + ": " + "empty result",
+			)
+		}
 		receiverPubKey, err := crypto.NewFromStrings(receiver.PubKey, "")
 		if err != nil {
 			return "", errors.New("error in processing receiver's public key: " + err.Error())
