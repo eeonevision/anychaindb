@@ -4,13 +4,13 @@ build:
 push:
 	@sh -c "'$(CURDIR)/push.sh'"
 
-build_branch:
-	@sh -c "'$(CURDIR)/build_branch.sh'"
+build_tag:
+	@sh -c "'$(CURDIR)/build_tag.sh'"
 
-push_branch:
-	@sh -c "'$(CURDIR)/push_branch.sh'"	
+push_tag:
+	@sh -c "'$(CURDIR)/push_tag.sh'"	
 
 login:
 	@docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
 
-.PHONY: login build build_branch push push_branch
+.PHONY: login build build_tag push push_tag
