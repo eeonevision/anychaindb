@@ -15,7 +15,7 @@ services:
   - docker
 
 env: 
-  - DOCKER_COMPOSE_VERSION=1.21.0
+  - DOCKER_COMPOSE_VERSION=1.21.0 TAG="latest"
 
 before_install:
   # update docker
@@ -39,16 +39,16 @@ jobs:
   include:
   - stage: build && test
     before_script:
-    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER/travis
     # make and run images
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
-          export TAG="latest"
       else
-          export TAG=${TRAVIS_BRANCH};
+          TAG=${TRAVIS_BRANCH};
           make build_tag;
       fi
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     - bash deploy.sh --mode=deploy --tag=${TAG} --clean_all=false;
     - sleep 15;
     # install dependencies
@@ -61,12 +61,12 @@ jobs:
     - go test -v key_test.go -args -msg='test message!' -update=true
   - stage: deploy to dockerhub
     before_script:
-    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER/travis
     script:
     - if [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make login build push;
       elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-          export TAG=${TRAVIS_BRANCH};
+          TAG=${TRAVIS_BRANCH};
           make login build_tag push_tag;
       fi
 
