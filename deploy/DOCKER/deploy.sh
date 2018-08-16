@@ -2,15 +2,10 @@
 
 # default values for environment variables
 type=""
+ext_node_address=""
 clean_all=true
-export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
-export DB_PORT=27017
-export P2P_PORT=26656
-export GRPC_PORT=26657
-export ABCI_PORT=26658
-export REST_PORT=26659
 export NODE_ARGS=""
 
 # set environment variables
@@ -25,8 +20,8 @@ case $i in
         clean_all="${i#*=}"
         shift
     ;;
-    --node_ip=*)
-        export NODE_IP="${i#*=}"
+    --ext_node_address=*)
+        ext_node_address="${i#*=}"
         shift
     ;;
     --config=*)
@@ -35,26 +30,6 @@ case $i in
     ;;
     --data=*)
         export DATA_ROOT="${i#*=}"
-        shift
-    ;;
-    --db_port=*)
-        export DB_PORT="${i#*=}"
-        shift
-    ;;
-    --p2p_port=*)
-        export P2P_PORT="${i#*=}"
-        shift
-    ;;
-    --grpc_port=*)
-        export GRPC_PORT="${i#*=}"
-        shift
-    ;;
-    --abci_port=*)
-        export ABCI_PORT="${i#*=}"
-        shift
-    ;;
-    --api_port=*)
-        export REST_PORT="${i#*=}"
         shift
     ;;
     --node_args=*)
@@ -94,23 +69,27 @@ if [ "$clean_all" = true ]; then
     clean
 fi
 
+# check if config file presented
+if [ -f "$CONFIG_PATH/config.toml" ]; then
+    # check to replace external ip address in config.toml
+    if [ "$ext_node_address" != "" ]; then
+        sed -i "s|external_address = \".*\"|external_address = \"${ext_node_address}\"|" "$CONFIG_PATH/config.toml"
+    fi
+fi
+
 # check conditions
 if [ "$type" = "node" ]; then
     prepare
     echo "[RELEASE] Deploying AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
-    docker-compose -f anychaindb.yaml up -d
+    docker-compose -f ./anychaindb.yaml up -d
 elif [ "$type" = "node-dev" ]; then
     prepare
     echo "[DEVELOP] Deploying AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
-    docker-compose -f anychaindb-develop.yaml up -d
+    docker-compose -f ./anychaindb-develop.yaml up -d
 elif [ "$type" = "update" ]; then
-    echo "[RELEASE] Starting AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
-    docker-compose -f anychaindb.yaml up -d
+    echo "[RELEASE] Updating AnychainDB node..."
+    docker-compose -f ./anychaindb.yaml up -d
 elif [ "$type" = "update-dev" ]; then
-    echo "[DEVELOP] Starting AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
-    docker-compose -f anychaindb-develop.yaml up -d
+    echo "[DEVELOP] Updating AnychainDB node..."
+    docker-compose -f ./anychaindb-develop.yaml up -d
 fi

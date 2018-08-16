@@ -24,6 +24,7 @@ version: "3.5"
 services:
 
   anychaindb-mongodb:
+    restart: always
     image: mongo:latest
     container_name: anychaindb-mongodb
     logging:
@@ -35,7 +36,7 @@ services:
       back:
         ipv4_address: 172.16.238.02
     expose:
-      - ${DB_PORT}
+      - 27017
     volumes:
       - type: bind
         source: ${DATA_ROOT}/mongo
@@ -43,6 +44,7 @@ services:
     entrypoint: mongod --bind_ip_all --quiet
 
   anychaindb-abci:
+    restart: always
     image: anychaindb/abci:latest
     container_name: anychaindb-abci
     logging:
@@ -54,12 +56,13 @@ services:
       back:
         ipv4_address: 172.16.238.03
     expose:
-      - ${ABCI_PORT}
+      - 26658
     depends_on:
       - anychaindb-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:error
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:27017 --addr=tcp://172.16.238.03:26658 --loglevel=*:error
     
   anychaindb-node:
+    restart: always
     image: anychaindb/node:latest
     container_name: anychaindb-node
     logging:
@@ -67,13 +70,15 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
-    network_mode: "host"
+    networks:
+        back:
+          ipv4_address: 172.16.238.04
     expose:
-      - ${P2P_PORT}
-      - ${GRPC_PORT}
+      - 26656
+      - 26657
     ports:
-      - ${P2P_PORT}:${P2P_PORT}
-      - ${GRPC_PORT}:${GRPC_PORT}
+      - 26656:26656
+      - 26657:26657
     volumes:
       - type: bind
         source: ${DATA_ROOT}
@@ -82,10 +87,11 @@ services:
       - anychaindb-abci
     entrypoint: "sh -c \"\
       tendermint init && \
-      tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
+      tendermint node --proxy_app=tcp://172.16.238.03:26658 --p2p.laddr=tcp://172.16.238.04:26656 --rpc.laddr=tcp://172.16.238.04:26657 ${NODE_ARGS} \
       \""
 
   anychaindb-rest-api:
+    restart: always
     image: anychaindb/api:latest
     container_name: anychaindb-rest-api
     logging:
@@ -93,20 +99,20 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
-    network_mode: "host"
+    networks:
+      back:
+        ipv4_address: 172.16.238.05
     expose:
-      - ${REST_PORT}
+      - 26659
     ports:
-      - ${REST_PORT}:${REST_PORT}
+      - 26659:26659
     depends_on:
       - anychaindb-abci
-    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error
+    entrypoint: tmlc-api --endpoint=http://172.16.238.04:26657 --ip=172.16.238.05 --port=26659 --loglevel=*:error
 
 networks:
   back:
-    # use the bridge driver, but enable IPv6
     driver: bridge
-    internal: true
     ipam:
       driver: default
       config:
