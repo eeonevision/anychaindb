@@ -9,5 +9,5 @@ fi
 
 echo "Build docker images for branch: ${BRANCH} ..."
 docker build -t "anychaindb/node:${BRANCH}" -f dockerfiles/anychaindb-node.Dockerfile .
-docker build --build-arg branch=${BRANCH} -t "anychaindb/abci:${BRANCH}" -f dockerfiles/develop/anychaindb-abci.Dockerfile .
-docker build --build-arg branch=${BRANCH} -t "anychaindb/api:${BRANCH}" -f dockerfiles/develop/anychaindb-rest-api.Dockerfile .
+docker build --build-arg branch=${BRANCH} -t "anychaindb/abci:${BRANCH}" -f dockerfiles/anychaindb-abci.Dockerfile .
+docker build --build-arg branch=${BRANCH} -t "anychaindb/api:${BRANCH}" -f dockerfiles/anychaindb-rest-api.Dockerfile .
