@@ -32,11 +32,13 @@ import (
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc/balancer"
 	_ "google.golang.org/grpc/balancer/roundrobin" // To register roundrobin.
-	"google.golang.org/grpc/channelz"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/internal"
+	"google.golang.org/grpc/internal/backoff"
+	"google.golang.org/grpc/internal/channelz"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 	_ "google.golang.org/grpc/resolver/dns"         // To register dns resolver.
@@ -49,6 +51,8 @@ import (
 const (
 	// minimum time to give a connection to complete
 	minConnectTimeout = 20 * time.Second
+	// must match grpclbName in grpclb/grpclb.go
+	grpclbName = "grpclb"
 )
 
 var (
@@ -97,7 +101,7 @@ type dialOptions struct {
 	streamInt   StreamClientInterceptor
 	cp          Compressor
 	dc          Decompressor
-	bs          backoffStrategy
+	bs          backoff.Strategy
 	block       bool
 	insecure    bool
 	timeout     time.Duration
@@ -108,9 +112,10 @@ type dialOptions struct {
 	// balancer, and also by WithBalancerName dial option.
 	balancerBuilder balancer.Builder
 	// This is to support grpclb.
-	resolverBuilder  resolver.Builder
-	waitForHandshake bool
-	channelzParentID int64
+	resolverBuilder      resolver.Builder
+	waitForHandshake     bool
+	channelzParentID     int64
+	disableServiceConfig bool
 }
 
 const (
@@ -168,7 +173,9 @@ func WithInitialConnWindowSize(s int32) DialOption {
 	}
 }
 
-// WithMaxMsgSize returns a DialOption which sets the maximum message size the client can receive. Deprecated: use WithDefaultCallOptions(MaxCallRecvMsgSize(s)) instead.
+// WithMaxMsgSize returns a DialOption which sets the maximum message size the client can receive.
+//
+// Deprecated: use WithDefaultCallOptions(MaxCallRecvMsgSize(s)) instead.
 func WithMaxMsgSize(s int) DialOption {
 	return WithDefaultCallOptions(MaxCallRecvMsgSize(s))
 }
@@ -251,7 +258,8 @@ func withResolverBuilder(b resolver.Builder) DialOption {
 }
 
 // WithServiceConfig returns a DialOption which has a channel to read the service configuration.
-// DEPRECATED: service config should be received through name resolver, as specified here.
+//
+// Deprecated: service config should be received through name resolver, as specified here.
 // https://github.com/grpc/grpc/blob/master/doc/service_config.md
 func WithServiceConfig(c <-chan ServiceConfig) DialOption {
 	return func(o *dialOptions) {
@@ -271,17 +279,17 @@ func WithBackoffMaxDelay(md time.Duration) DialOption {
 // Use WithBackoffMaxDelay until more parameters on BackoffConfig are opened up
 // for use.
 func WithBackoffConfig(b BackoffConfig) DialOption {
-	// Set defaults to ensure that provided BackoffConfig is valid and
-	// unexported fields get default values.
-	setDefaults(&b)
-	return withBackoff(b)
+
+	return withBackoff(backoff.Exponential{
+		MaxDelay: b.MaxDelay,
+	})
 }
 
 // withBackoff sets the backoff strategy used for connectRetryNum after a
 // failed connection attempt.
 //
 // This can be exported if arbitrary backoff strategies are allowed by gRPC.
-func withBackoff(bs backoffStrategy) DialOption {
+func withBackoff(bs backoff.Strategy) DialOption {
 	return func(o *dialOptions) {
 		o.bs = bs
 	}
@@ -322,6 +330,7 @@ func WithPerRPCCredentials(creds credentials.PerRPCCredentials) DialOption {
 
 // WithTimeout returns a DialOption that configures a timeout for dialing a ClientConn
 // initially. This is valid if and only if WithBlock() is present.
+//
 // Deprecated: use DialContext and context.WithTimeout instead.
 func WithTimeout(d time.Duration) DialOption {
 	return func(o *dialOptions) {
@@ -333,6 +342,11 @@ func withContextDialer(f func(context.Context, string) (net.Conn, error)) DialOp
 	return func(o *dialOptions) {
 		o.copts.Dialer = f
 	}
+}
+
+func init() {
+	internal.WithContextDialer = withContextDialer
+	internal.WithResolverBuilder = withResolverBuilder
 }
 
 // WithDialer returns a DialOption that specifies a function to use for dialing network addresses.
@@ -409,6 +423,15 @@ func WithAuthority(a string) DialOption {
 func WithChannelzParentID(id int64) DialOption {
 	return func(o *dialOptions) {
 		o.channelzParentID = id
+	}
+}
+
+// WithDisableServiceConfig returns a DialOption that causes grpc to ignore any
+// service config provided by the resolver and provides a hint to the resolver
+// to not fetch service configs.
+func WithDisableServiceConfig() DialOption {
+	return func(o *dialOptions) {
+		o.disableServiceConfig = true
 	}
 }
 
@@ -518,7 +541,9 @@ func DialContext(ctx context.Context, target string, opts ...DialOption) (conn *
 		}
 	}
 	if cc.dopts.bs == nil {
-		cc.dopts.bs = DefaultBackoffConfig
+		cc.dopts.bs = backoff.Exponential{
+			MaxDelay: DefaultBackoffConfig.MaxDelay,
+		}
 	}
 	if cc.dopts.resolverBuilder == nil {
 		// Only try to parse target when resolver builder is not already set.
@@ -675,7 +700,12 @@ type ClientConn struct {
 	curAddresses    []resolver.Address
 	balancerWrapper *ccBalancerWrapper
 
-	channelzID int64 // channelz unique identification number
+	channelzID          int64 // channelz unique identification number
+	czmu                sync.RWMutex
+	callsStarted        int64
+	callsSucceeded      int64
+	callsFailed         int64
+	lastCallStartedTime time.Time
 }
 
 // WaitForStateChange waits until the connectivity.State of ClientConn changes from sourceState or
@@ -800,6 +830,8 @@ func (cc *ClientConn) switchBalancer(name string) {
 	if cc.balancerWrapper != nil {
 		cc.balancerWrapper.close()
 	}
+	// Clear all stickiness state.
+	cc.blockingpicker.clearStickinessState()
 
 	builder := balancer.Get(name)
 	if builder == nil {
@@ -863,7 +895,37 @@ func (cc *ClientConn) removeAddrConn(ac *addrConn, err error) {
 // ChannelzMetric returns ChannelInternalMetric of current ClientConn.
 // This is an EXPERIMENTAL API.
 func (cc *ClientConn) ChannelzMetric() *channelz.ChannelInternalMetric {
-	return &channelz.ChannelInternalMetric{}
+	state := cc.GetState()
+	cc.czmu.RLock()
+	defer cc.czmu.RUnlock()
+	return &channelz.ChannelInternalMetric{
+		State:                    state,
+		Target:                   cc.target,
+		CallsStarted:             cc.callsStarted,
+		CallsSucceeded:           cc.callsSucceeded,
+		CallsFailed:              cc.callsFailed,
+		LastCallStartedTimestamp: cc.lastCallStartedTime,
+	}
+}
+
+func (cc *ClientConn) incrCallsStarted() {
+	cc.czmu.Lock()
+	cc.callsStarted++
+	// TODO(yuxuanli): will make this a time.Time pointer improve performance?
+	cc.lastCallStartedTime = time.Now()
+	cc.czmu.Unlock()
+}
+
+func (cc *ClientConn) incrCallsSucceeded() {
+	cc.czmu.Lock()
+	cc.callsSucceeded++
+	cc.czmu.Unlock()
+}
+
+func (cc *ClientConn) incrCallsFailed() {
+	cc.czmu.Lock()
+	cc.callsFailed++
+	cc.czmu.Unlock()
 }
 
 // connect starts to creating transport and also starts the transport monitor
@@ -945,7 +1007,7 @@ func (cc *ClientConn) GetMethodConfig(method string) MethodConfig {
 	m, ok := cc.sc.Methods[method]
 	if !ok {
 		i := strings.LastIndex(method, "/")
-		m, _ = cc.sc.Methods[method[:i+1]]
+		m = cc.sc.Methods[method[:i+1]]
 	}
 	return m
 }
@@ -961,6 +1023,9 @@ func (cc *ClientConn) getTransport(ctx context.Context, failfast bool) (transpor
 // handleServiceConfig parses the service config string in JSON format to Go native
 // struct ServiceConfig, and store both the struct and the JSON string in ClientConn.
 func (cc *ClientConn) handleServiceConfig(js string) error {
+	if cc.dopts.disableServiceConfig {
+		return nil
+	}
 	sc, err := parseServiceConfig(js)
 	if err != nil {
 		return err
@@ -981,14 +1046,26 @@ func (cc *ClientConn) handleServiceConfig(js string) error {
 			cc.balancerWrapper.handleResolvedAddrs(cc.curAddresses, nil)
 		}
 	}
+
+	if envConfigStickinessOn {
+		var newStickinessMDKey string
+		if sc.stickinessMetadataKey != nil && *sc.stickinessMetadataKey != "" {
+			newStickinessMDKey = *sc.stickinessMetadataKey
+		}
+		// newStickinessMDKey is "" if one of the following happens:
+		// - stickinessMetadataKey is set to ""
+		// - stickinessMetadataKey field doesn't exist in service config
+		cc.blockingpicker.updateStickinessMDKey(strings.ToLower(newStickinessMDKey))
+	}
+
 	cc.mu.Unlock()
 	return nil
 }
 
 func (cc *ClientConn) resolveNow(o resolver.ResolveNowOption) {
-	cc.mu.Lock()
+	cc.mu.RLock()
 	r := cc.resolverWrapper
-	cc.mu.Unlock()
+	cc.mu.RUnlock()
 	if r == nil {
 		return
 	}
@@ -1013,13 +1090,16 @@ func (cc *ClientConn) Close() error {
 	bWrapper := cc.balancerWrapper
 	cc.balancerWrapper = nil
 	cc.mu.Unlock()
+
 	cc.blockingpicker.close()
+
 	if rWrapper != nil {
 		rWrapper.close()
 	}
 	if bWrapper != nil {
 		bWrapper.close()
 	}
+
 	for ac := range conns {
 		ac.tearDown(ErrClientConnClosing)
 	}
@@ -1060,7 +1140,12 @@ type addrConn struct {
 	// negotiations must complete.
 	connectDeadline time.Time
 
-	channelzID int64 // channelz unique identification number
+	channelzID          int64 // channelz unique identification number
+	czmu                sync.RWMutex
+	callsStarted        int64
+	callsSucceeded      int64
+	callsFailed         int64
+	lastCallStartedTime time.Time
 }
 
 // adjustParams updates parameters used to create transports upon
@@ -1096,7 +1181,7 @@ func (ac *addrConn) errorf(format string, a ...interface{}) {
 // resetTransport recreates a transport to the address for ac.  The old
 // transport will close itself on error or when the clientconn is closed.
 // The created transport must receive initial settings frame from the server.
-// In case that doesnt happen, transportMonitor will kill the newly created
+// In case that doesn't happen, transportMonitor will kill the newly created
 // transport after connectDeadline has expired.
 // In case there was an error on the transport before the settings frame was
 // received, resetTransport resumes connecting to backends after the one that
@@ -1129,7 +1214,7 @@ func (ac *addrConn) resetTransport() error {
 			// This means either a successful HTTP2 connection was established
 			// or this is the first time this addrConn is trying to establish a
 			// connection.
-			backoffFor := ac.dopts.bs.backoff(connectRetryNum) // time.Duration.
+			backoffFor := ac.dopts.bs.Backoff(connectRetryNum) // time.Duration.
 			// This will be the duration that dial gets to finish.
 			dialDuration := getMinConnectTimeout()
 			if backoffFor > dialDuration {
@@ -1141,7 +1226,7 @@ func (ac *addrConn) resetTransport() error {
 			connectDeadline = start.Add(dialDuration)
 			ridx = 0 // Start connecting from the beginning.
 		} else {
-			// Continue trying to conect with the same deadlines.
+			// Continue trying to connect with the same deadlines.
 			connectRetryNum = ac.connectRetryNum
 			backoffDeadline = ac.backoffDeadline
 			connectDeadline = ac.connectDeadline
@@ -1458,7 +1543,6 @@ func (ac *addrConn) tearDown(err error) {
 	if channelz.IsOn() {
 		channelz.RemoveEntry(ac.channelzID)
 	}
-	return
 }
 
 func (ac *addrConn) getState() connectivity.State {
@@ -1467,8 +1551,47 @@ func (ac *addrConn) getState() connectivity.State {
 	return ac.state
 }
 
+func (ac *addrConn) getCurAddr() (ret resolver.Address) {
+	ac.mu.Lock()
+	ret = ac.curAddr
+	ac.mu.Unlock()
+	return
+}
+
 func (ac *addrConn) ChannelzMetric() *channelz.ChannelInternalMetric {
-	return &channelz.ChannelInternalMetric{}
+	ac.mu.Lock()
+	addr := ac.curAddr.Addr
+	ac.mu.Unlock()
+	state := ac.getState()
+	ac.czmu.RLock()
+	defer ac.czmu.RUnlock()
+	return &channelz.ChannelInternalMetric{
+		State:                    state,
+		Target:                   addr,
+		CallsStarted:             ac.callsStarted,
+		CallsSucceeded:           ac.callsSucceeded,
+		CallsFailed:              ac.callsFailed,
+		LastCallStartedTimestamp: ac.lastCallStartedTime,
+	}
+}
+
+func (ac *addrConn) incrCallsStarted() {
+	ac.czmu.Lock()
+	ac.callsStarted++
+	ac.lastCallStartedTime = time.Now()
+	ac.czmu.Unlock()
+}
+
+func (ac *addrConn) incrCallsSucceeded() {
+	ac.czmu.Lock()
+	ac.callsSucceeded++
+	ac.czmu.Unlock()
+}
+
+func (ac *addrConn) incrCallsFailed() {
+	ac.czmu.Lock()
+	ac.callsFailed++
+	ac.czmu.Unlock()
 }
 
 // ErrClientConnTimeout indicates that the ClientConn cannot establish the

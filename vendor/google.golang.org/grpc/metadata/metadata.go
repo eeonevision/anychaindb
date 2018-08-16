@@ -19,7 +19,7 @@
 // Package metadata define the structure of the metadata supported by gRPC library.
 // Please refer to https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
 // for more information about custom-metadata.
-package metadata
+package metadata // import "google.golang.org/grpc/metadata"
 
 import (
 	"fmt"
@@ -28,7 +28,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// DecodeKeyValue returns k, v, nil.  It is deprecated and should not be used.
+// DecodeKeyValue returns k, v, nil.
+//
+// Deprecated: use k and v directly instead.
 func DecodeKeyValue(k, v string) (string, string, error) {
 	return k, v, nil
 }
