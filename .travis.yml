@@ -28,12 +28,6 @@ before_install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
-  # get go dependency manager
-  - go get github.com/golang/dep/cmd/dep
-  # generate msgpack binaries
-  - go get github.com/tinylib/msgp
-  - cd ${TRAVIS_BUILD_DIR}/transaction && go generate
-  - cd ${TRAVIS_BUILD_DIR}/state && go generate
 
 jobs:
   include:
@@ -51,8 +45,14 @@ jobs:
     - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
     - bash deploy.sh --mode=deploy --tag=${TAG} --clean_all=false;
     - sleep 15;
+    # get go dependency manager
+    - go get github.com/golang/dep/cmd/dep
     # install dependencies
     - dep ensure
+    # generate msgpack binaries
+    - go get github.com/tinylib/msgp
+    - cd ${TRAVIS_BUILD_DIR}/transaction && go generate
+    - cd ${TRAVIS_BUILD_DIR}/state && go generate
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
     - go test -v handler_test.go -args -host=127.0.0.1 -update=true
