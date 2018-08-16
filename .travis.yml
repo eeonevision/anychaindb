@@ -44,8 +44,9 @@ jobs:
           make build;
           bash deploy.sh --type=node --clean_all=false --node_ip=${NODE_IP};
       else
-          make build_develop;
-          bash deploy.sh --type=node-dev --clean_all=false --node_ip=${NODE_IP};
+          export BRANCH=${TRAVIS_BRANCH};
+          make build_branch;
+          bash deploy.sh --type=node-branch --branch=${TRAVIS_BRANCH} --clean_all=false --node_ip=${NODE_IP};
       fi
     - sleep 15;
     # test api
@@ -61,6 +62,7 @@ jobs:
     - if [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make login build push;
       elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-          make login build_develop push_develop;
+          export BRANCH=${TRAVIS_BRANCH};
+          make login build_branch push_branch;
       fi
 

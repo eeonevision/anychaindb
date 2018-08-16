@@ -3,6 +3,7 @@
 # default values for environment variables
 type=""
 clean_all=true
+export BRANCH="master"
 export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
@@ -19,6 +20,10 @@ do
 case $i in
     --type=*)
         type="${i#*=}"
+        shift
+    ;;
+    --branch=*)
+        export BRANCH="${i#*=}"
         shift
     ;;
     --clean_all=*)
@@ -97,20 +102,20 @@ fi
 # check conditions
 if [ "$type" = "node" ]; then
     prepare
-    echo "[RELEASE] Deploying AnychainDB node..."
+    echo "[latest] Deploying AnychainDB node..."
     curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
     docker-compose -f anychaindb.yaml up -d
-elif [ "$type" = "node-dev" ]; then
+elif [ "$type" = "node-branch" ]; then
     prepare
-    echo "[DEVELOP] Deploying AnychainDB node..."
+    echo "[${BRANCH}] Deploying AnychainDB node..."
     curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
     docker-compose -f anychaindb-develop.yaml up -d
 elif [ "$type" = "update" ]; then
-    echo "[RELEASE] Starting AnychainDB node..."
+    echo "[latest] Starting AnychainDB node..."
     curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
     docker-compose -f anychaindb.yaml up -d
-elif [ "$type" = "update-dev" ]; then
-    echo "[DEVELOP] Starting AnychainDB node..."
+elif [ "$type" = "update-branch" ]; then
+    echo "[${BRANCH}] Starting AnychainDB node..."
     curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
     docker-compose -f anychaindb-develop.yaml up -d
 fi

@@ -106,7 +106,6 @@ networks:
   back:
     # use the bridge driver, but enable IPv6
     driver: bridge
-    internal: true
     ipam:
       driver: default
       config:

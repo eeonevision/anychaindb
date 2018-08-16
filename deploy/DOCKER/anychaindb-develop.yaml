@@ -41,10 +41,10 @@ services:
         source: ${DATA_ROOT}/mongo
         target: /data/db
     entrypoint: mongod --bind_ip_all --quiet
-    
-  anychaindb-abci-develop:
-    image: anychaindb/abci:develop
-    container_name: anychaindb-abci-develop
+
+  anychaindb-abci:
+    image: anychaindb/abci:${BRANCH}
+    container_name: anychaindb-abci
     logging:
       driver: "json-file"
       options:
@@ -55,15 +55,13 @@ services:
         ipv4_address: 172.16.238.03
     expose:
       - ${ABCI_PORT}
-    ports:
-      - ${ABCI_PORT}:${ABCI_PORT}
     depends_on:
       - anychaindb-mongodb
-    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:info
-
-  anychaindb-node-develop:
-    image: anychaindb/node:develop
-    container_name: anychaindb-node-develop
+    entrypoint: tmlc-abci --dbhost=mongodb://172.16.238.02:${DB_PORT} --addr=tcp://172.16.238.03:${ABCI_PORT} --loglevel=*:error
+    
+  anychaindb-node:
+    image: anychaindb/node:${BRANCH}
+    container_name: anychaindb-node
     logging:
       driver: "json-file"
       options:
@@ -81,15 +79,15 @@ services:
         source: ${DATA_ROOT}
         target: /tendermint
     depends_on:
-      - anychaindb-abci-develop
+      - anychaindb-abci
     entrypoint: "sh -c \"\
       tendermint init && \
       tendermint node --proxy_app=tcp://172.16.238.03:${ABCI_PORT} --p2p.laddr=tcp://${NODE_IP}:${P2P_PORT} --rpc.laddr=tcp://${NODE_IP}:${GRPC_PORT} ${NODE_ARGS} \
       \""
 
-  anychaindb-rest-api-develop:
-    image: anychaindb/api:develop
-    container_name: anychaindb-rest-api-develop
+  anychaindb-rest-api:
+    image: anychaindb/api:${BRANCH}
+    container_name: anychaindb-rest-api
     logging:
       driver: "json-file"
       options:
@@ -101,14 +99,13 @@ services:
     ports:
       - ${REST_PORT}:${REST_PORT}
     depends_on:
-      - anychaindb-abci-develop
-    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:info
+      - anychaindb-abci
+    entrypoint: tmlc-api --endpoint=http://${NODE_IP}:${GRPC_PORT} --ip=${NODE_IP} --port=${REST_PORT} --loglevel=*:error
 
 networks:
   back:
     # use the bridge driver, but enable IPv6
     driver: bridge
-    internal: true
     ipam:
       driver: default
       config:

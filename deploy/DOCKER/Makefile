@@ -4,18 +4,13 @@ build:
 push:
 	@sh -c "'$(CURDIR)/push.sh'"
 
-build_develop:
-	# node:develop image uses latest tendermint release in master branch
-	@docker build -t "anychaindb/node:develop" -f dockerfiles/anychaindb-node.Dockerfile .
-	@docker build -t "anychaindb/abci:develop" -f dockerfiles/develop/anychaindb-abci-develop.Dockerfile .
-	@docker build -t "anychaindb/api:develop" -f dockerfiles/develop/anychaindb-rest-api-develop.Dockerfile .
+build_branch:
+	@sh -c "'$(CURDIR)/build_branch.sh'"
 
-push_develop:
-	@docker push "anychaindb/node:develop"
-	@docker push "anychaindb/abci:develop"
-	@docker push "anychaindb/api:develop"
+push_branch:
+	@sh -c "'$(CURDIR)/push_branch.sh'"	
 
 login:
 	@docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
 
-.PHONY: login build build_develop push push_develop
+.PHONY: login build build_branch push push_branch

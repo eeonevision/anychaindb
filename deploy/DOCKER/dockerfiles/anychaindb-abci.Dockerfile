@@ -28,12 +28,14 @@
 # Stage Zero. Build sources
 FROM golang:latest
 
+ARG branch
+
 RUN mkdir -p $GOPATH/src/github.com/eeonevision/anychaindb && \
 	go get github.com/golang/dep/cmd/dep && \
 	go get github.com/tinylib/msgp && \
     cd $GOPATH/src/github.com/eeonevision/anychaindb && \
     git clone https://github.com/eeonevision/anychaindb . && \
-    git checkout master && \
+    git checkout ${branch} && \
 	cd $GOPATH/src/github.com/eeonevision/anychaindb/state && \
 	go generate && \
 	cd $GOPATH/src/github.com/eeonevision/anychaindb/transaction && \

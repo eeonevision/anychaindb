@@ -12,5 +12,5 @@ fi
 
 echo "Build two docker images with latest and ${TAG} tags ..."
 docker build -t "anychaindb/node:latest" -t "anychaindb/node:$TAG" -f dockerfiles/anychaindb-node.Dockerfile .
-docker build -t "anychaindb/abci:latest" -t "anychaindb/abci:$TAG" -f dockerfiles/anychaindb-abci.Dockerfile .
-docker build -t "anychaindb/api:latest" -t "anychaindb/api:$TAG" -f dockerfiles/anychaindb-rest-api.Dockerfile .
+docker build --build-arg branch=master -t "anychaindb/abci:latest" -t "anychaindb/abci:$TAG" -f dockerfiles/anychaindb-abci.Dockerfile .
+docker build --build-arg branch=master -t "anychaindb/api:latest" -t "anychaindb/api:$TAG" -f dockerfiles/anychaindb-rest-api.Dockerfile .
