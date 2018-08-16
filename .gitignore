@@ -24,6 +24,8 @@ client/tests/artifacts/*
 api/tests/artifacts/*
 crypto/tests/artifacts/*
 
-
 # Ignore envornment files
 .env
+
+# Ignore vendor directory
+vendor
