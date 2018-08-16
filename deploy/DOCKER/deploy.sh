@@ -14,7 +14,7 @@ for i in "$@"
 do
 case $i in
     --mode=*)
-        type="${i#*=}"
+        mode="${i#*=}"
         shift
     ;;
     --tag=*)

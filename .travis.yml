@@ -44,6 +44,7 @@ jobs:
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
+          export TAG="latest"
       else
           export TAG=${TRAVIS_BRANCH};
           make build_tag;
