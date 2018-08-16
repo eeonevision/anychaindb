@@ -1,37 +1,32 @@
 #!/bin/bash
 
 # default values for environment variables
-type=""
+mode=""
+ext_node_address=""
 clean_all=true
-export BRANCH="master"
-export NODE_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+export TAG="latest"
 export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
-export DB_PORT=27017
-export P2P_PORT=26656
-export GRPC_PORT=26657
-export ABCI_PORT=26658
-export REST_PORT=26659
 export NODE_ARGS=""
 
 # set environment variables
 for i in "$@"
 do
 case $i in
-    --type=*)
+    --mode=*)
         type="${i#*=}"
         shift
     ;;
-    --branch=*)
-        export BRANCH="${i#*=}"
+    --tag=*)
+        export TAG="${i#*=}"
         shift
     ;;
     --clean_all=*)
         clean_all="${i#*=}"
         shift
     ;;
-    --node_ip=*)
-        export NODE_IP="${i#*=}"
+    --ext_node_address=*)
+        ext_node_address="${i#*=}"
         shift
     ;;
     --config=*)
@@ -40,26 +35,6 @@ case $i in
     ;;
     --data=*)
         export DATA_ROOT="${i#*=}"
-        shift
-    ;;
-    --db_port=*)
-        export DB_PORT="${i#*=}"
-        shift
-    ;;
-    --p2p_port=*)
-        export P2P_PORT="${i#*=}"
-        shift
-    ;;
-    --grpc_port=*)
-        export GRPC_PORT="${i#*=}"
-        shift
-    ;;
-    --abci_port=*)
-        export ABCI_PORT="${i#*=}"
-        shift
-    ;;
-    --api_port=*)
-        export REST_PORT="${i#*=}"
         shift
     ;;
     --node_args=*)
@@ -99,23 +74,20 @@ if [ "$clean_all" = true ]; then
     clean
 fi
 
-# check conditions
-if [ "$type" = "node" ]; then
+# check if config file presented
+if [ -f "$CONFIG_PATH/config.toml" ]; then
+    # check to replace external ip address in config.toml
+    if [ "$ext_node_address" != "" ]; then
+        sed -i "s|external_address = \".*\"|external_address = \"${ext_node_address}\"|" "$CONFIG_PATH/config.toml"
+    fi
+fi
+
+# check mode
+if [ "$mode" = "deploy" ]; then
     prepare
-    echo "[latest] Deploying AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
-    docker-compose -f anychaindb.yaml up -d
-elif [ "$type" = "node-branch" ]; then
-    prepare
-    echo "[${BRANCH}] Deploying AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/${BRANCH}/deploy/DOCKER/anychaindb-develop.yaml
-    docker-compose -f anychaindb-develop.yaml up -d
-elif [ "$type" = "update" ]; then
-    echo "[latest] Starting AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/master/deploy/DOCKER/anychaindb.yaml
-    docker-compose -f anychaindb.yaml up -d
-elif [ "$type" = "update-branch" ]; then
-    echo "[${BRANCH}] Starting AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/${BRANCH}/deploy/DOCKER/anychaindb-develop.yaml
-    docker-compose -f anychaindb-develop.yaml up -d
+    echo "[${TAG}] Deploying AnychainDB node..."
+    docker-compose -f ./compose.yaml up -d
+elif [ "$mode" = "update" ]; then
+    echo "[${TAG}] Updating AnychainDB node..."
+    docker-compose -f ./compose.yaml up -d
 fi
