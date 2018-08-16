@@ -164,7 +164,7 @@ func (app *Application) Commit() types.ResponseCommit {
 	for {
 		if err := app.state.DB.Run(bson.M{
 			"dbhash":      1,
-			"collections": []string{"accounts", "transitions", "conversions"},
+			"collections": []string{"accounts", "data"},
 		}, &hash); err == nil {
 			return types.ResponseCommit{Data: []byte(hash["md5"].(string))}
 		}
