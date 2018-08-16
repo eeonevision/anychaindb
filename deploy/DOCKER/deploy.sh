@@ -108,7 +108,7 @@ if [ "$type" = "node" ]; then
 elif [ "$type" = "node-branch" ]; then
     prepare
     echo "[${BRANCH}] Deploying AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/${BRANCH}/deploy/DOCKER/anychaindb-develop.yaml
     docker-compose -f anychaindb-develop.yaml up -d
 elif [ "$type" = "update" ]; then
     echo "[latest] Starting AnychainDB node..."
@@ -116,6 +116,6 @@ elif [ "$type" = "update" ]; then
     docker-compose -f anychaindb.yaml up -d
 elif [ "$type" = "update-branch" ]; then
     echo "[${BRANCH}] Starting AnychainDB node..."
-    curl -L -O https://github.com/eeonevision/anychaindb/raw/develop/deploy/DOCKER/anychaindb-develop.yaml
+    curl -L -O https://github.com/eeonevision/anychaindb/raw/${BRANCH}/deploy/DOCKER/anychaindb-develop.yaml
     docker-compose -f anychaindb-develop.yaml up -d
 fi
