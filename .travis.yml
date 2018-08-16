@@ -28,6 +28,8 @@ before_install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
+  # get go dependency manager
+  - go get github.com/golang/dep/cmd/dep
   # generate msgpack binaries
   - go get github.com/tinylib/msgp
   - cd ${TRAVIS_BUILD_DIR}/transaction && go generate
@@ -49,6 +51,8 @@ jobs:
           bash deploy.sh --type=node-branch --branch=${TRAVIS_BRANCH} --clean_all=false --node_ip=${NODE_IP};
       fi
     - sleep 15;
+    # ensure dependencies
+    - dep ensure
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
     - go test -v handler_test.go -args -host=${NODE_IP} -update=true
