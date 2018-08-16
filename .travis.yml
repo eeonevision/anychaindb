@@ -48,7 +48,7 @@ jobs:
           export TAG=${TRAVIS_BRANCH};
           make build_tag;
       fi
-    - bash deploy.sh --mode=deploy --tag=${TAG} --clean_all=false --node_ip=${NODE_IP};
+    - bash deploy.sh --mode=deploy --tag=${TAG} --clean_all=false;
     - sleep 15;
     # install dependencies
     - dep ensure
