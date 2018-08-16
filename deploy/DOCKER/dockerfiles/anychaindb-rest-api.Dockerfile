@@ -28,18 +28,22 @@
 # Stage Zero. Build sources
 FROM golang:latest
 
+ARG branch
+
 RUN mkdir -p $GOPATH/src/github.com/eeonevision/anychaindb && \
-	go get github.com/tools/godep && \
+	go get github.com/golang/dep/cmd/dep && \
 	go get github.com/tinylib/msgp && \
     cd $GOPATH/src/github.com/eeonevision/anychaindb && \
     git clone https://github.com/eeonevision/anychaindb . && \
-    git checkout master && \
+    git checkout ${branch} && \
 	cd $GOPATH/src/github.com/eeonevision/anychaindb/state && \
 	go generate && \
 	cd $GOPATH/src/github.com/eeonevision/anychaindb/transaction && \
 	go generate && \
 	cd $GOPATH/src/github.com/eeonevision/anychaindb && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 godep go install ./... && \
+	dep ensure && \
+	cd cmd/tmlc-api && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install && \
     cd - && \
     rm -rf $GOPATH/src/github.com/eeonevision/anychaindb
 

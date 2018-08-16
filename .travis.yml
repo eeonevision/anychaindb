@@ -15,7 +15,7 @@ services:
   - docker
 
 env: 
-  - DOCKER_COMPOSE_VERSION=1.21.0 NODE_IP=127.0.0.1
+  - DOCKER_COMPOSE_VERSION=1.21.0 TAG="latest"
 
 before_install:
   # update docker
@@ -28,39 +28,45 @@ before_install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
-  # generate msgpack binaries
-  - go get github.com/tinylib/msgp
-  - cd ${TRAVIS_BUILD_DIR}/transaction && go generate
-  - cd ${TRAVIS_BUILD_DIR}/state && go generate
 
 jobs:
   include:
   - stage: build && test
     before_script:
-    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER/travis
     # make and run images
     script:
     - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make build;
-          bash deploy.sh --type=node --clean_all=false --node_ip=${NODE_IP};
       else
-          make build_develop;
-          bash deploy.sh --type=node-dev --clean_all=false --node_ip=${NODE_IP};
+          TAG=${TRAVIS_BRANCH};
+          make build_tag;
       fi
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    - bash deploy.sh --mode=deploy --tag=${TAG} --clean_all=false;
     - sleep 15;
+    # get go dependency manager
+    - go get github.com/golang/dep/cmd/dep
+    # install dependencies
+    - dep ensure
+    # generate msgpack binaries
+    - go get github.com/tinylib/msgp
+    - cd ${TRAVIS_BUILD_DIR}/transaction && go generate
+    - cd ${TRAVIS_BUILD_DIR}/state && go generate
     # test api
     - cd ${TRAVIS_BUILD_DIR}/api/tests
-    - go test -v handler_test.go -args -host=${NODE_IP} -update=true
+    - go test -v handler_test.go -args -host=127.0.0.1 -update=true
     # test crypto
     - cd ${TRAVIS_BUILD_DIR}/crypto/tests
     - go test -v key_test.go -args -msg='test message!' -update=true
   - stage: deploy to dockerhub
     before_script:
-    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER
+    - cd ${TRAVIS_BUILD_DIR}/deploy/DOCKER/travis
     script:
     - if [ "$TRAVIS_BRANCH" == "$TRAVIS_TAG" ]; then 
           make login build push;
       elif [ "$TRAVIS_BRANCH" == "develop" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-          make login build_develop push_develop;
+          TAG=${TRAVIS_BRANCH};
+          make login build_tag push_tag;
       fi
 

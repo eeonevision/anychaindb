@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # default values for environment variables
-type=""
+mode=""
 ext_node_address=""
 clean_all=true
+export TAG="latest"
 export DATA_ROOT="$HOME/anychaindb"
 export CONFIG_PATH="$DATA_ROOT/config"
 export NODE_ARGS=""
@@ -12,8 +13,12 @@ export NODE_ARGS=""
 for i in "$@"
 do
 case $i in
-    --type=*)
-        type="${i#*=}"
+    --mode=*)
+        mode="${i#*=}"
+        shift
+    ;;
+    --tag=*)
+        export TAG="${i#*=}"
         shift
     ;;
     --clean_all=*)
@@ -77,19 +82,12 @@ if [ -f "$CONFIG_PATH/config.toml" ]; then
     fi
 fi
 
-# check conditions
-if [ "$type" = "node" ]; then
+# check mode
+if [ "$mode" = "deploy" ]; then
     prepare
-    echo "[RELEASE] Deploying AnychainDB node..."
-    docker-compose -f ./anychaindb.yaml up -d
-elif [ "$type" = "node-dev" ]; then
-    prepare
-    echo "[DEVELOP] Deploying AnychainDB node..."
-    docker-compose -f ./anychaindb-develop.yaml up -d
-elif [ "$type" = "update" ]; then
-    echo "[RELEASE] Updating AnychainDB node..."
-    docker-compose -f ./anychaindb.yaml up -d
-elif [ "$type" = "update-dev" ]; then
-    echo "[DEVELOP] Updating AnychainDB node..."
-    docker-compose -f ./anychaindb-develop.yaml up -d
+    echo "[${TAG}] Deploying AnychainDB node..."
+    docker-compose -f ./compose.yaml up -d
+elif [ "$mode" = "update" ]; then
+    echo "[${TAG}] Updating AnychainDB node..."
+    docker-compose -f ./compose.yaml up -d
 fi
